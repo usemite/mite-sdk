@@ -12,6 +12,7 @@
 #include <NitroModules/HybridObjectRegistry.hpp>
 
 #include "JHybridMathSpec.hpp"
+#include <NitroModules/JNISharedPtr.hpp>
 
 namespace margelo::nitro::bugzzapp {
 
@@ -25,7 +26,22 @@ int initialize(JavaVM* vm) {
     margelo::nitro::bugzzapp::JHybridMathSpec::registerNatives();
 
     // Register Nitro Hybrid Objects
+    HybridObjectRegistry::registerHybridObjectConstructor(
+      "Math",
+      []() -> std::shared_ptr<HybridObject> {
+        static auto javaClass = jni::findClassStatic("com/margelo/nitro/bugzzapp/HybridMath");
+        static auto defaultConstructor = javaClass->getConstructor<JHybridMathSpec::javaobject()>();
     
+        auto instance = javaClass->newObject(defaultConstructor);
+    #ifdef NITRO_DEBUG
+        if (instance == nullptr) [[unlikely]] {
+          throw std::runtime_error("Failed to create an instance of \"JHybridMathSpec\" - the constructor returned null!");
+        }
+    #endif
+        auto globalRef = jni::make_global(instance);
+        return JNISharedPtr::make_shared_from_jni<JHybridMathSpec>(globalRef);
+      }
+    );
   });
 }
 

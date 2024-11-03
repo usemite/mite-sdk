@@ -7,6 +7,11 @@
     "androidNamespace": ["bugzzapp"],
     "androidCxxLibName": "BugzzApp"
   },
-  "autolinking": {},
+  "autolinking": {
+    "BugzzA=app": {
+      "swift": "HybridMath",
+      "kotlin": "HybridMath"
+    }
+  },
   "ignorePaths": ["node_modules"]
 }
