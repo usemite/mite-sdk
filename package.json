@@ -65,5 +65,8 @@
     "expo-sqlite": "~15.0.0",
     "react": "*",
     "react-native": "~0.76.2"
+  },
+  "dependencies": {
+    "axios": "^1.7.7"
   }
 }
