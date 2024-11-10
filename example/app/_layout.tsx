@@ -12,8 +12,9 @@ import "react-native-reanimated";
 import { BugzzApp } from "@henrypl/bugzzapp-sdk";
 
 const bugzzApp = new BugzzApp({
-  publicKey: "24b64bea8b38b707d47d0a5fd598407de3edede297cd376d99b993ada62f58be",
-  appId: "1df61bcd-c91d-45e6-92ff-804788fa1364",
+  publicKey:
+    "pk_105e933bcd6f777c4d0d04a31d85e6861ae94060e190d0c05fcc980fbe5d4091",
+  appId: "3060c5c0-452d-490b-a7ff-bc3eb17312ac",
 });
 
 bugzzApp.init();
