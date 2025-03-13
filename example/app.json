@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "bugzzapp-sdk-example",
-    "slug": "bugzzapp-sdk-example",
+    "name": "mite-sdk-example",
+    "slug": "mite-sdk-example",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -15,14 +15,14 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.henrypaulino.bugzzapp-sdk-example"
+      "bundleIdentifier": "com.henrypaulino.mite-sdk-example"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.henrypaulino.bugzzappsdkexample"
+      "package": "com.henrypaulino.mitesdkexample"
     },
     "web": {
       "bundler": "metro",

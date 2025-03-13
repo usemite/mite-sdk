@@ -6,10 +6,10 @@
       "@/*": [
         "./*"
       ],
-      "@bugzzapp/sdk": [
+      "@mite/mite-sdk": [
         "../src/index"
       ],
-      "@bugzzapp/sdk/*": [
+      "@mite/mite-sdk/*": [
         "../src/*"
       ]
     }

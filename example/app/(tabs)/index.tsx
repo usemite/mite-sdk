@@ -1,49 +1,48 @@
-import ParallaxScrollView from "@/components/ParallaxScrollView";
-import { Image, Pressable, StyleSheet, Text, View } from "react-native";
-import { BugzzAppSDK } from "@bugzzapp/sdk";
+import ParallaxScrollView from '@/components/ParallaxScrollView'
+import { MiteSDK } from '@mite/mite-sdk'
+import { Image, Pressable, StyleSheet, Text, View } from 'react-native'
 
 export default function HomeScreen() {
-
   const triggerTypeError = () => {
     // Trying to call a method on undefined
-    const user = undefined;
+    const user = undefined
     // user.getName();
-  };
+  }
 
   const triggerReferenceError = () => {
     // Trying to call an undefined function
     // nonExistentFunction();
-  };
+  }
 
   const triggerPromiseError = async () => {
     // Throwing an error in a promise
     new Promise((resolve, reject) => {
-      reject(new Error("Async operation failed"));
-    });
-  };
+      reject(new Error('Async operation failed'))
+    })
+  }
 
   const triggerCustomError = () => {
     // Throwing a custom error
-    throw new Error("This is a custom error message");
-  };
+    throw new Error('This is a custom error message')
+  }
 
   const triggerRangeError = () => {
     // Creating an array with invalid length
-    new Array(-1);
-  };
+    new Array(-1)
+  }
 
   return (
     <ParallaxScrollView
-      headerBackgroundColor={{ light: "#A1CEDC", dark: "#1D3D47" }}
+      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
       headerImage={
         <Image
-          source={require("@/assets/images/partial-react-logo.png")}
+          source={require('@/assets/images/partial-react-logo.png')}
           style={styles.reactLogo}
         />
       }
     >
       <View style={styles.container}>
-        <Text style={styles.title}>{BugzzAppSDK.hello}</Text>
+        <Text style={styles.title}>{MiteSDK.hello}</Text>
         <Text style={styles.title}>Error Testing App</Text>
 
         <Pressable style={styles.button} onPress={triggerTypeError}>
@@ -67,39 +66,39 @@ export default function HomeScreen() {
         </Pressable>
       </View>
     </ParallaxScrollView>
-  );
+  )
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center',
+    alignItems: 'center',
     padding: 20,
     gap: 10,
   },
   title: {
     fontSize: 24,
-    fontWeight: "bold",
+    fontWeight: 'bold',
     marginBottom: 20,
   },
   button: {
-    backgroundColor: "#007AFF",
+    backgroundColor: '#007AFF',
     padding: 15,
     borderRadius: 8,
-    width: "100%",
-    alignItems: "center",
+    width: '100%',
+    alignItems: 'center',
   },
   buttonText: {
-    color: "white",
+    color: 'white',
     fontSize: 16,
-    fontWeight: "600",
+    fontWeight: '600',
   },
   reactLogo: {
     height: 178,
     width: 290,
     bottom: 0,
     left: 0,
-    position: "absolute",
+    position: 'absolute',
   },
-});
+})

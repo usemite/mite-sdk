@@ -1,5 +1,5 @@
 {
-  "name": "@bugzzapp/sdk-example",
+  "name": "@mite/mite-sdk-example",
   "license": "0BSD",
   "main": "expo-router/entry",
   "version": "1.0.0",
@@ -16,7 +16,7 @@
     "preset": "jest-expo"
   },
   "dependencies": {
-    "@bugzzapp/sdk": "*",
+    "@mite/mite-sdk": "*",
     "@expo/vector-icons": "^14.0.2",
     "@react-navigation/bottom-tabs": "^7.0.0",
     "@react-navigation/native": "^7.0.0",

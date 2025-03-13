@@ -1,5 +1,5 @@
 {
-  "name": "@bugzzapp/nitrogen",
+  "name": "@mite/nitrogen",
   "version": "0.0.1",
   "description": "A template for Nitrogen Modules.",
   "main": "lib/index.js",

@@ -1,11 +1,11 @@
 // TODO: Export all HybridObjects here
 
 import { NitroModules } from "react-native-nitro-modules";
-export * from "./specs/BugzzAppSDK.nitro";
-import type { BugzzAppSDK as BugzzAppSDKType } from "./specs/BugzzAppSDK.nitro";
-import { BugzzApp } from "./BugzzApp";
+export * from "./specs/MiteSDK.nitro";
+import { Mite } from "./Mite";
+import type { MiteSDK as MiteSDKType } from "./specs/MiteSDK.nitro";
 
-export const BugzzAppSDK = NitroModules.createHybridObject<BugzzAppSDKType>("BugzzAppSDK")
+export const MiteSDK = NitroModules.createHybridObject<MiteSDKType>("MiteSDK")
 
-export { BugzzApp }
+export { Mite }
 export * from './types'

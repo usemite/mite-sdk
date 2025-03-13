@@ -1,19 +1,19 @@
 {
   "cxxNamespace": [
-    "bugzzapp"
+    "mite"
   ],
   "ios": {
-    "iosModuleName": "BugzzAppSDK"
+    "iosModuleName": "MiteSDK"
   },
   "android": {
     "androidNamespace": [
-      "bugzzapp"
+      "mite"
     ],
-    "androidCxxLibName": "BugzzAppSDK"
+    "androidCxxLibName": "MiteSDK"
   },
   "autolinking": {
-    "BugzzAppSDK": {
-      "cpp": "HybridBugzzAppSDK"
+    "Mite": {
+      "cpp": "HybridMite"
     }
   },
   "ignorePaths": [

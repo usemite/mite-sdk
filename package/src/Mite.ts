@@ -1,8 +1,8 @@
 import axios, { type AxiosInstance } from 'axios';
 import * as Device from 'expo-device';
-import type { BugzzAppConfig, ErrorReport } from './types';
+import type { ErrorReport, MiteConfig } from './types';
 
-export class BugzzApp {
+export class Mite {
   private appId: string;
   private publicKey: string;
   private deviceInfo: typeof Device;
@@ -10,7 +10,7 @@ export class BugzzApp {
   private initialized = false;
   private enabled = false;
 
-  constructor(config: BugzzAppConfig) {
+  constructor(config: MiteConfig) {
     this.appId = config.appId;
     this.publicKey = config.publicKey;
     this.deviceInfo = Device;
@@ -38,16 +38,16 @@ export class BugzzApp {
         if (error.response) {
           // The request was made and the server responded with a status code
           // that falls out of the range of 2xx
-          console.error('[BugzzApp] Server error:', {
+          console.error('[Mite] Server error:', {
             status: error.response.status,
             data: error.response.data
           });
         } else if (error.request) {
           // The request was made but no response was received
-          console.error('[BugzzApp] Network error:', error.message);
+          console.error('[Mite] Network error:', error.message);
         } else {
           // Something happened in setting up the request that triggered an Error
-          console.error('[BugzzApp] Request setup error:', error.message);
+          console.error('[Mite] Request setup error:', error.message);
         }
         return Promise.reject(error);
       }
@@ -132,7 +132,7 @@ export class BugzzApp {
       });
     } catch (e) {
       // Error already logged by interceptor
-      // console.error('[BugzzApp] Failed to send error to server:', e);
+      // console.error('[Mite] Failed to send error to server:', e);
     }
   }
 
@@ -160,7 +160,7 @@ export class BugzzApp {
 
       await this.sendErrorToServer(errorReport);
     } catch (e) {
-      console.error('[BugzzApp] Failed to capture error:', e);
+      console.error('[Mite] Failed to capture error:', e);
     }
   }
 

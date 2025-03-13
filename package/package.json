@@ -1,5 +1,5 @@
 {
-  "name": "@bugzzapp/sdk",
+  "name": "@mite/mite-sdk",
   "version": "0.0.1",
   "description": "A template for Nitro Modules.",
   "main": "lib/index",

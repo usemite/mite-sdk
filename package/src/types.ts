@@ -1,6 +1,6 @@
 import type Device from 'expo-device'
 
-export interface BugzzAppConfig {
+export interface MiteConfig {
   appId: string
   publicKey: string
   endpoint?: string
