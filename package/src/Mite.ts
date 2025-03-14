@@ -17,6 +17,7 @@ export class Mite {
 
     // Initialize axios client with defaults
     this.client = axios.create({
+      // TODO: change this endpoint to use ENV variable
       baseURL: config.endpoint || 'http://127.0.0.1:54321/functions/v1/',
       timeout: config.timeout || 5000,
       headers: {
@@ -103,8 +104,7 @@ export class Mite {
 
     rejectionTracking.enable({
       allRejections: true,
-      // biome-ignore lint/suspicious/noExplicitAny: <explanation>
-      onUnhandled: async (id: string, error: Record<string, any>) => {
+      onUnhandled: async (id: string, error: Record<string, unknown>) => {
         await this.captureError(error, {
           type: 'unhandledPromiseRejection',
           promiseId: id
