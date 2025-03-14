@@ -1,11 +1,13 @@
-import axios, { type AxiosInstance } from 'axios';
+import type { AxiosInstance } from 'axios';
 import type Device from 'expo-device';
+import { ApiClient } from './utils/client';
 import type { ApiClientConfig, ErrorReport, ErrorReporterInterface } from './types';
 
 export class ErrorReporter implements ErrorReporterInterface {
   private appId: string;
   private publicKey: string;
   private deviceInfo: typeof Device;
+  private apiClient: ApiClient;
   private client: AxiosInstance;
   private initialized = false;
   private enabled = false;
@@ -15,55 +17,19 @@ export class ErrorReporter implements ErrorReporterInterface {
     this.publicKey = config.publicKey;
     this.deviceInfo = config.deviceInfo;
 
-    this.client = axios.create({
-      // TODO: change this endpoint to use ENV variable
-      baseURL: config.endpoint,
+    // Create ApiClient instance
+    this.apiClient = ApiClient.getInstance({
+      baseURL: config.endpoint || 'https://api.mite.dev',
       timeout: config.timeout || 5000,
+      maxRetries: config.retries,
       headers: {
-        'Content-Type': 'application/json',
         'X-App-Public-Key': this.publicKey,
         'X-SDK-Version': '1.0.0'
       }
     });
 
-    if (config.retries) {
-      this.setupRetry(config.retries);
-    }
-
-    this.client.interceptors.response.use(
-      response => response,
-      error => {
-        if (error.response) {
-          console.error('[Mite] Server error:', {
-            status: error.response.status,
-            data: error.response.data
-          });
-        } else if (error.request) {
-          console.error('[Mite] Network error:', error.message);
-        } else {
-          console.error('[Mite] Request setup error:', error.message);
-        }
-        return Promise.reject(error);
-      }
-    );
-  }
-
-  private setupRetry(maxRetries: number) {
-    let retryCount = 0;
-
-    this.client.interceptors.response.use(null, async error => {
-      const config = error.config;
-
-      if (!config || !config.retry || retryCount >= maxRetries) {
-        return Promise.reject(error);
-      }
-
-      retryCount += 1;
-      const backoff = Math.min(1000 * (2 ** retryCount), 10000);
-      await new Promise(resolve => setTimeout(resolve, backoff));
-
-      return this.client(config);
-    });
+    // Get underlying axios instance for backwards compatibility
+    this.client = this.apiClient.getAxiosInstance();
   }
 
   init() {
@@ -107,7 +73,7 @@ export class ErrorReporter implements ErrorReporterInterface {
     if (!this.enabled || !this.initialized) return;
 
     try {
-      await this.client.post('/error-reporting', {
+      await this.apiClient.post('/error-reporting', {
         timestamp: Date.now(),
         appId: this.appId,
         error: {
@@ -175,5 +141,9 @@ export class ErrorReporter implements ErrorReporterInterface {
 
   public getClient(): AxiosInstance {
     return this.client;
+  }
+  
+  public getApiClient(): ApiClient {
+    return this.apiClient;
   }
 }
