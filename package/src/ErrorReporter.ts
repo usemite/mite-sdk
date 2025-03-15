@@ -61,7 +61,7 @@ export class ErrorReporter implements ErrorReporterInterface {
     if (!this.enabled || !this.initialized) return
 
     try {
-      await this.apiClient.post('/submit-error', {
+      await this.apiClient.post('/report-bug', {
         timestamp: Date.now(),
         appId: this.appId,
         error: {
