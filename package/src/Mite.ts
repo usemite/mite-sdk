@@ -15,7 +15,7 @@ export class Mite {
       timeout: config.timeout || 5000,
       maxRetries: config.retries,
       headers: {
-        'X-App-Public-Key': config.publicKey,
+        'x-ppp-public-key': config.publicKey,
         'X-SDK-Version': '1.0.0'
       }
     });
