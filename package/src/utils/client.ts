@@ -137,12 +137,10 @@ export class ApiClient {
  * Create a supabase-specific client with the provided credentials
  */
 export function createSupabaseClient(
-  supabaseUrl: string,
   supabaseKey: string,
   options: Omit<ApiClientOptions, 'baseURL'> = {}
 ): ApiClient {
   return ApiClient.getInstance({
-    baseURL: supabaseUrl,
     headers: {
       'apikey': supabaseKey,
       'Authorization': `Bearer ${supabaseKey}`
