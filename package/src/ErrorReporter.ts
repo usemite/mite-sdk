@@ -1,76 +1,64 @@
-import type { AxiosInstance } from 'axios';
-import type Device from 'expo-device';
-import { ApiClient } from './utils/client';
-import type { ApiClientConfig, ErrorReport, ErrorReporterInterface } from './types';
+import type { AxiosInstance } from 'axios'
+import type Device from 'expo-device'
+import type { ErrorReport, ErrorReportConfig, ErrorReporterInterface } from './types'
+import type { ApiClient } from './utils/client'
 
 export class ErrorReporter implements ErrorReporterInterface {
-  private appId: string;
-  private publicKey: string;
-  private deviceInfo: typeof Device;
-  private apiClient: ApiClient;
-  private client: AxiosInstance;
-  private initialized = false;
-  private enabled = false;
+  private appId: string
+  private deviceInfo: typeof Device
+  private apiClient: ApiClient
+  private client: AxiosInstance
+  private initialized = false
+  private enabled = false
 
-  constructor(config: ApiClientConfig) {
-    this.appId = config.appId;
-    this.publicKey = config.publicKey;
-    this.deviceInfo = config.deviceInfo;
+  constructor(config: ErrorReportConfig) {
+    const { miteConfig, apiClient } = config
+    this.appId = miteConfig.appId
+    this.deviceInfo = config.deviceInfo
 
-    // Create ApiClient instance
-    this.apiClient = ApiClient.getInstance({
-      baseURL: config.endpoint || 'https://api.mite.dev',
-      timeout: config.timeout || 5000,
-      maxRetries: config.retries,
-      headers: {
-        'X-App-Public-Key': this.publicKey,
-        'X-SDK-Version': '1.0.0'
-      }
-    });
-
-    // Get underlying axios instance for backwards compatibility
-    this.client = this.apiClient.getAxiosInstance();
+    this.apiClient = apiClient
+    this.client = apiClient.getAxiosInstance()
   }
 
   init() {
     if (this.initialized) {
-      return;
+      return
     }
 
-    this.setupErrorHandler();
-    this.setupPromiseRejectionHandler();
+    this.setupErrorHandler()
+    this.setupPromiseRejectionHandler()
 
-    this.enabled = true;
-    this.initialized = true;
+    this.enabled = true
+    this.initialized = true
   }
 
   private setupErrorHandler() {
     if (ErrorUtils) {
-      const originalHandler = ErrorUtils.getGlobalHandler();
+      const originalHandler = ErrorUtils.getGlobalHandler()
 
       ErrorUtils.setGlobalHandler(async (error, isFatal) => {
-        await this.captureError(error, { isFatal });
-        originalHandler(error, isFatal);
-      });
+        await this.captureError(error, { isFatal })
+        originalHandler(error, isFatal)
+      })
     }
   }
 
   private setupPromiseRejectionHandler() {
-    const rejectionTracking = require('promise/setimmediate/rejection-tracking');
+    const rejectionTracking = require('promise/setimmediate/rejection-tracking')
 
     rejectionTracking.enable({
       allRejections: true,
       onUnhandled: async (id: string, error: Record<string, unknown>) => {
         await this.captureError(error, {
           type: 'unhandledPromiseRejection',
-          promiseId: id
-        });
-      }
-    });
+          promiseId: id,
+        })
+      },
+    })
   }
 
   private async sendErrorToServer(errorReport: ErrorReport) {
-    if (!this.enabled || !this.initialized) return;
+    if (!this.enabled || !this.initialized) return
 
     try {
       await this.apiClient.post('/error-reporting', {
@@ -84,66 +72,76 @@ export class ErrorReporter implements ErrorReporterInterface {
           promiseId: errorReport.error.promiseId,
         },
         deviceInfo: this.deviceInfo,
-        metadata: errorReport.metadata
-      });
+        metadata: errorReport.metadata,
+      })
     } catch (e) {
       // Error already logged by interceptor
       // console.error('[Mite] Failed to send error to server:', e);
     }
   }
 
-  async captureError(error: Error | Record<string, unknown>, additionalInfo: Record<string, unknown> = {}) {
-    if (!this.enabled || !this.initialized) return;
+  async captureError(
+    error: Error | Record<string, unknown>,
+    additionalInfo: Record<string, unknown> = {},
+  ) {
+    if (!this.enabled || !this.initialized) return
 
-    console.log('REPORTING ERROR', error);
+    console.log('REPORTING ERROR', error)
 
     try {
       const errorReport: ErrorReport = {
         timestamp: new Date().toISOString(),
         error: {
           error_name: typeof error.name === 'string' ? error.name : 'Unknown Error',
-          error_message: typeof error.message === 'string' ? error.message : 'No error message',
+          error_message:
+            typeof error.message === 'string' ? error.message : 'No error message',
           error_stack: typeof error.stack === 'string' ? error.stack : 'No stack trace',
-          ...(('type' in error) && { type: String(error.type) }),
-          ...(('promise_id' in error) && { promiseId: String(error.promiseId) })
+          ...('type' in error && { type: String(error.type) }),
+          ...('promise_id' in error && { promiseId: String(error.promiseId) }),
         },
         device: this.deviceInfo,
         metadata: {
-          ...(Object.entries(additionalInfo).reduce((acc, [key, value]) => {
-            // Convert all values to string, number, or boolean
-            acc[key] = typeof value === 'object' ? JSON.stringify(value) : value as string | number | boolean;
-            return acc;
-          }, {} as Record<string, string | number | boolean>))
-        }
-      };
+          ...Object.entries(additionalInfo).reduce(
+            (acc, [key, value]) => {
+              // Convert all values to string, number, or boolean
+              acc[key] =
+                typeof value === 'object'
+                  ? JSON.stringify(value)
+                  : (value as string | number | boolean)
+              return acc
+            },
+            {} as Record<string, string | number | boolean>,
+          ),
+        },
+      }
 
-      await this.sendErrorToServer(errorReport);
+      await this.sendErrorToServer(errorReport)
     } catch (e) {
-      console.error('[Mite] Failed to capture error:', e);
+      console.error('[Mite] Failed to capture error:', e)
     }
   }
 
   public async logError(error: Error, metadata: Record<string, unknown> = {}) {
-    await this.captureError(error, metadata);
+    await this.captureError(error, metadata)
   }
 
   public disable() {
-    this.enabled = false;
+    this.enabled = false
   }
 
   public enable() {
-    this.enabled = true;
+    this.enabled = true
   }
 
   public isEnabled(): boolean {
-    return this.enabled;
+    return this.enabled
   }
 
   public getClient(): AxiosInstance {
-    return this.client;
+    return this.client
   }
-  
+
   public getApiClient(): ApiClient {
-    return this.apiClient;
+    return this.apiClient
   }
 }
