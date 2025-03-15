@@ -61,7 +61,7 @@ export class ErrorReporter implements ErrorReporterInterface {
     if (!this.enabled || !this.initialized) return
 
     try {
-      await this.apiClient.post('/error-reporting', {
+      await this.apiClient.post('/submit-error', {
         timestamp: Date.now(),
         appId: this.appId,
         error: {
@@ -103,7 +103,6 @@ export class ErrorReporter implements ErrorReporterInterface {
         metadata: {
           ...Object.entries(additionalInfo).reduce(
             (acc, [key, value]) => {
-              // Convert all values to string, number, or boolean
               acc[key] =
                 typeof value === 'object'
                   ? JSON.stringify(value)
