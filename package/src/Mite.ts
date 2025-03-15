@@ -1,21 +1,28 @@
 import * as Device from 'expo-device';
 import { ErrorReporter } from './ErrorReporter';
 import type { ErrorReporterInterface, MiteConfig } from './types';
+import { ApiClient } from './utils/client';
 
 export class Mite {
   private deviceInfo: typeof Device;
   private errorReporter: ErrorReporterInterface;
   private initialized = false;
+  private apiClient: ApiClient;
 
   constructor(config: MiteConfig) {
     this.deviceInfo = Device;
+    this.apiClient = ApiClient.getInstance({
+      timeout: config.timeout || 5000,
+      maxRetries: config.retries,
+      headers: {
+        'X-App-Public-Key': config.publicKey,
+        'X-SDK-Version': '1.0.0'
+      }
+    });
     this.errorReporter = new ErrorReporter({
-      appId: config.appId,
-      publicKey: config.publicKey,
-      endpoint: config.endpoint,
-      timeout: config.timeout,
-      retries: config.retries,
-      deviceInfo: this.deviceInfo
+      miteConfig: config,
+      deviceInfo: this.deviceInfo,
+      apiClient: this.apiClient
     });
   }
 
@@ -25,6 +32,8 @@ export class Mite {
     }
     this.errorReporter.init();
     this.initialized = true;
+    console.log('Initialized!');
+
   }
 
   /**
