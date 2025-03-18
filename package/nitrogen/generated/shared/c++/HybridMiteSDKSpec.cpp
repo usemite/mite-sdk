@@ -15,6 +15,8 @@ namespace margelo::nitro::mite {
     // load custom methods/properties
     registerHybrids(this, [](Prototype& prototype) {
       prototype.registerHybridGetter("hello", &HybridMiteSDKSpec::getHello);
+      prototype.registerHybridMethod("installCrashHandlers", &HybridMiteSDKSpec::installCrashHandlers);
+      prototype.registerHybridMethod("removeCrashHandlers", &HybridMiteSDKSpec::removeCrashHandlers);
     });
   }
 

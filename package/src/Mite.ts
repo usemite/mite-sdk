@@ -1,8 +1,12 @@
 import * as Device from 'expo-device'
+import { NitroModules } from 'react-native-nitro-modules'
 import { BugReporter } from './BugReporter'
 import { ErrorReporter } from './ErrorReporter'
+import type { MiteSDK as MiteSDKType } from './specs/MiteSDK.nitro'
 import type { ErrorReporterInterface, MiteConfig, SubmitBugReportPayload } from './types'
 import { ApiClient } from './utils/client'
+
+export const MiteSDK = NitroModules.createHybridObject<MiteSDKType>('MiteSDK')
 
 export class Mite {
   private deviceInfo: typeof Device
@@ -10,6 +14,7 @@ export class Mite {
   private apiClient: ApiClient
   private errorReporter: ErrorReporterInterface
   private bugReporter: BugReporter
+  private nativeCrashHandlersEnabled = false
 
   constructor(config: MiteConfig) {
     this.deviceInfo = Device
@@ -39,8 +44,39 @@ export class Mite {
     }
     this.errorReporter.init()
     this.bugReporter.init()
+    this.enableNativeCrashHandlers()
     this.initialized = true
-    console.log('Initialized!')
+    console.log('[Mite] Initialized!')
+  }
+
+  /**
+   * Enables native crash handlers to catch app crashes
+   */
+  enableNativeCrashHandlers() {
+    try {
+      if (!this.nativeCrashHandlersEnabled) {
+        console.log('[Mite] Installing native crash handlers')
+        MiteSDK.installCrashHandlers()
+        this.nativeCrashHandlersEnabled = true
+      }
+    } catch (error) {
+      console.error('[Mite] Failed to install native crash handlers:', error)
+    }
+  }
+
+  /**
+   * Disables native crash handlers
+   */
+  disableNativeCrashHandlers() {
+    try {
+      if (this.nativeCrashHandlersEnabled) {
+        console.log('[Mite] Removing native crash handlers')
+        MiteSDK.removeCrashHandlers()
+        this.nativeCrashHandlersEnabled = false
+      }
+    } catch (error) {
+      console.error('[Mite] Failed to remove native crash handlers:', error)
+    }
   }
 
   /**

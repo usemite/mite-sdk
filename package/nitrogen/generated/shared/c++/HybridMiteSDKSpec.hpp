@@ -48,7 +48,8 @@ namespace margelo::nitro::mite {
 
     public:
       // Methods
-      
+      virtual void installCrashHandlers() = 0;
+      virtual void removeCrashHandlers() = 0;
 
     protected:
       // Hybrid Setup
