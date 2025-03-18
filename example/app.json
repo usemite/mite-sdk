@@ -33,7 +33,6 @@
       "expo-router",
       "expo-font",
       "@mite/mite-sdk",
-      "expo-build-properties",
       [
         "expo-build-properties",
         {
