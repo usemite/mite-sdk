@@ -10,7 +10,14 @@
     "ios": "expo run:ios",
     "web": "expo start --web",
     "test": "jest --watchAll",
-    "lint": "expo lint"
+    "lint": "expo lint",
+    "pod": "pod install --project-directory=ios",
+    "prebuild": "expo prebuild",
+    "prebuild:clean": "expo prebuild --clean",
+    "prebuild:ios": "expo prebuild --platform ios",
+    "prebuild:android": "expo prebuild --platform android",
+    "prebuild:ios:clean": "expo prebuild --platform ios --clean",
+    "prebuild:android:clean": "expo prebuild --platform android --clean"
   },
   "jest": {
     "preset": "jest-expo"
