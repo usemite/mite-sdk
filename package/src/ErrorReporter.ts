@@ -15,7 +15,6 @@ export class ErrorReporter implements ErrorReporterInterface {
     const { miteConfig, apiClient } = config
     this.appId = miteConfig.appId
     this.deviceInfo = config.deviceInfo
-
     this.apiClient = apiClient
     this.client = apiClient.getAxiosInstance()
   }
@@ -61,7 +60,7 @@ export class ErrorReporter implements ErrorReporterInterface {
     if (!this.enabled || !this.initialized) return
 
     try {
-      await this.apiClient.post('/report-bug', {
+      await this.apiClient.post('/report-error', {
         timestamp: Date.now(),
         appId: this.appId,
         error: {
