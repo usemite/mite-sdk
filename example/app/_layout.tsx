@@ -9,8 +9,8 @@ import { useColorScheme } from '@/hooks/useColorScheme'
 import { Mite, MiteProvider } from '@mite/mite-sdk'
 
 const mite = new Mite({
-  publicKey: 'pk_948498c3812af4d2783a3795bde5e30e0ed4cd253fec10210b63e7e6bd716f0e',
-  appId: '1452b424-113b-42a5-a2ab-eb713389733e',
+  publicKey: 'pk_5fe26cc2a837e5ed2a3ba9e9e84b8258c6e1cdd23160d2539be44197d8beaa02',
+  appId: '528dbec6-6cee-4d05-a173-9175ef27554d',
 })
 
 mite.init()
