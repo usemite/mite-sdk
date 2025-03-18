@@ -65,19 +65,19 @@ export class Mite {
     return this.bugReporter.sendBugReportToServer(payload)
   }
 
-  public async logError(error: Error, metadata: Record<string, unknown> = {}) {
+  async logError(error: Error, metadata: Record<string, unknown> = {}) {
     return this.errorReporter.logError(error, metadata)
   }
 
-  public disable() {
+  disable() {
     this.errorReporter.disable()
   }
 
-  public enable() {
+  enable() {
     this.errorReporter.enable()
   }
 
-  public isEnabled(): boolean {
+  isEnabled(): boolean {
     return this.errorReporter.isEnabled()
   }
 }
