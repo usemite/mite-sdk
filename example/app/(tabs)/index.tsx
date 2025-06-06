@@ -1,9 +1,18 @@
 import ParallaxScrollView from '@/components/ParallaxScrollView'
 import { BugReport, useMite } from '@mite/mite-sdk'
-import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
+import { useRouter } from 'expo-router'
+import {
+  Image,
+  Pressable,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native'
 
 export default function HomeScreen() {
   const mite = useMite()
+  const router = useRouter()
   const triggerTypeError = () => {
     // Trying to call a method on undefined
     const user = undefined
@@ -51,14 +60,15 @@ export default function HomeScreen() {
   const reportBug = async () => {
     // Capture a bug and send it to the server
     console.log('hello')
+    router.navigate('/bug-report')
 
-    await mite.submitBug({
-      title: 'Bug Title',
-      description: 'Bug Description',
-      steps_to_reproduce: 'Steps to reproduce',
-      expected_behavior: 'Expected behavior',
-      actual_behavior: 'Actual behavior',
-    })
+    // await mite.submitBug({
+    //   title: 'Bug Title',
+    //   description: 'Bug Description',
+    //   steps_to_reproduce: 'Steps to reproduce',
+    //   expected_behavior: 'Expected behavior',
+    //   actual_behavior: 'Actual behavior',
+    // })
   }
 
   return (
@@ -100,11 +110,11 @@ export default function HomeScreen() {
           <Text style={styles.buttonText}>Trigger Native Crash</Text>
         </TouchableOpacity>
 
-        <BugReport>
+        <Pressable onPress={reportBug}>
           <View style={styles.button}>
             <Text style={styles.buttonText}>Report Bug</Text>
           </View>
-        </BugReport>
+        </Pressable>
       </View>
     </ParallaxScrollView>
   )

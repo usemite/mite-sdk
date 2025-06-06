@@ -61,7 +61,7 @@ export interface SubmitBugReportPayload {
   steps_to_reproduce?: string
   expected_behavior?: string
   actual_behavior?: string
-  priority?: 'low' | 'medium' | 'high' // Defaults to 'medium'
+  priority?: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL' // Defaults to 'medium'
   app_version?: string // Version of the app
   device_info?: {
     // Device information as JSON
