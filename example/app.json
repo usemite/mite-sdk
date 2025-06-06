@@ -41,6 +41,12 @@
           }
         }
       ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "The app accesses your photos."
+        }
+      ],
       "expo-web-browser"
     ],
     "experiments": {

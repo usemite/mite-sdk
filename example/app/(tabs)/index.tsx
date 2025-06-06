@@ -1,5 +1,5 @@
 import ParallaxScrollView from '@/components/ParallaxScrollView'
-import { useMite } from '@mite/mite-sdk'
+import { BugReport, useMite } from '@mite/mite-sdk'
 import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
 
 export default function HomeScreen() {
@@ -99,9 +99,12 @@ export default function HomeScreen() {
         >
           <Text style={styles.buttonText}>Trigger Native Crash</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.button} onPress={reportBug}>
-          <Text style={styles.buttonText}>Report Bug</Text>
-        </TouchableOpacity>
+
+        <BugReport>
+          <View style={styles.button}>
+            <Text style={styles.buttonText}>Report Bug</Text>
+          </View>
+        </BugReport>
       </View>
     </ParallaxScrollView>
   )

@@ -1,8 +1,4 @@
-import {
-  DarkTheme,
-  DefaultTheme,
-  ThemeProvider,
-} from '@react-navigation/native'
+import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native'
 import { useFonts } from 'expo-font'
 import { Stack } from 'expo-router'
 import * as SplashScreen from 'expo-splash-screen'
@@ -13,7 +9,7 @@ import { Mite, MiteProvider } from '@mite/mite-sdk'
 
 const mite = new Mite({
   publicKey: process.env.EXPO_PUBLIC_MITE_KEY!,
-  appId: '5c0c7fbf-54f9-417c-8bfe-4e9b04596f4d',
+  appId: process.env.EXPO_PUBLIC_MITE_APP_ID!,
 })
 
 mite.init()

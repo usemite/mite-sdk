@@ -3,21 +3,18 @@ import type { SubmitBugReportPayload } from './types'
 import type { ApiClient } from './utils/client'
 
 interface BugReporterConfig {
-  appId: string
   apiClient: ApiClient
   deviceInfo: typeof Device
 }
 
 export class BugReporter {
-  private appId: string
   private apiClient: ApiClient
   private initialized = false
   private enabled = false
   private deviceInfo: typeof Device
 
   constructor(config: BugReporterConfig) {
-    const { appId, apiClient, deviceInfo } = config
-    this.appId = appId
+    const { apiClient, deviceInfo } = config
     this.apiClient = apiClient
     this.deviceInfo = deviceInfo
   }
