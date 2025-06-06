@@ -33,17 +33,21 @@ export function BugReport({ children }: PropsWithChildren) {
       >
         <View style={styles.container}>
           <Text>Report Bug</Text>
+          <Pressable onPress={() => setVisible(false)}>
+            <Text>Cancel</Text>
+          </Pressable>
         </View>
-        <Pressable onPress={() => setVisible(false)}>
-          <Text>Cancel</Text>
-        </Pressable>
       </Modal>
     </>
   )
 }
 
 const styles = StyleSheet.create({
-  container: {},
+  container: {
+    paddingHorizontal: 18,
+    paddingVertical: 24,
+    gap: 12,
+  },
   submit: {
     flex: 1,
     paddingVertical: 8,
