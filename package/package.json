@@ -25,12 +25,12 @@
     "README.md"
   ],
   "scripts": {
-    "postinstall": "tsc || exit 0;",
+    "build": "rm -rf lib && bun typecheck && bob build",
     "typecheck": "tsc --noEmit",
-    "clean": "rm -rf android/build node_modules/**/android/build lib",
-    "lint": "biome lint --fix",
-    "typescript": "tsc --noEmit false",
-    "specs": "bun run --filter=\"**\" typescript && bun nitrogen --logLevel=\"debug\""
+    "clean": "rm -rf android/build node_modules/**/android/build lib android/.cxx node_modules/**/android/.cxx",
+    "release": "release-it",
+    "specs": "bun typecheck && nitrogen --logLevel=\\\"debug\\\" && bun run build",
+    "specs:pod": "bun specs && bun --cwd ../example pod"
   },
   "keywords": [
     "react-native",
@@ -38,14 +38,14 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/mrousavy/nitro.git"
+    "url": "git+https://github.com/mitefix/mite-sdk.git"
   },
-  "author": "Marc Rousavy <me@mrousavy.com> (https://github.com/mrousavy)",
+  "author": "Henry Paulino <me@henrypl.com> (https://github.com/corasan)",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/mrousavy/nitro/issues"
+    "url": "https://github.com/mitefix/mite-sdk/issues"
   },
-  "homepage": "https://github.com/mrousavy/nitro#readme",
+  "homepage": "https://github.com/mitefix/mite-sdk#readme",
   "publishConfig": {
     "registry": "https://registry.npmjs.org/"
   },
@@ -62,6 +62,71 @@
     "axios": "^1.13.2"
   },
   "devDependencies": {
-    "@types/react": "^19.1.0"
+    "@types/react": "^19.1.0",
+    "@release-it/bumper": "^7.0.5",
+    "@release-it/conventional-changelog": "^10.0.1",
+    "react-native-builder-bob": "^0.40.13",
+    "release-it": "^19.0.4"
+  },
+  "release-it": {
+    "npm": {
+      "publish": true,
+      "skipVersion": true
+    },
+    "github": {
+      "release": true,
+      "releaseName": "v${version}"
+    },
+    "hooks": {
+      "after:bump": "bun specs",
+      "before:release": "bun run build"
+    },
+    "git": {
+      "commitMessage": "chore: release ${version}",
+      "tagName": "v${version}",
+      "requireCleanWorkingDir": false
+    },
+    "plugins": {
+      "@release-it/conventional-changelog": {
+        "preset": {
+          "name": "conventionalcommits",
+          "types": [
+            {
+              "type": "feat",
+              "section": "✨ Features"
+            },
+            {
+              "type": "fix",
+              "section": "🐞 Fixes"
+            },
+            {
+              "type": "chore(deps)",
+              "section": "🛠️ Dependency Upgrades"
+            },
+            {
+              "type": "perf",
+              "section": "🏎️ Performance Improvements"
+            },
+            {
+              "type": "docs",
+              "section": "📚 Documentation"
+            }
+          ]
+        }
+      }
+    }
+  },
+  "react-native-builder-bob": {
+    "source": "src",
+    "output": "lib",
+    "targets": [
+      [
+        "module",
+        {
+          "esm": true
+        }
+      ],
+      "typescript"
+    ]
   }
 }
