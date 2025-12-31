@@ -44,13 +44,15 @@ def add_nitrogen_files(spec)
   spec.private_header_files = current_private_header_files + [
     # iOS specific specs
     "nitrogen/generated/ios/c++/**/*.{h,hpp}",
+    # Views are framework-specific and should be private
+    "nitrogen/generated/shared/**/views/**/*"
   ]
 
   current_pod_target_xcconfig = spec.attributes_hash['pod_target_xcconfig'] || {}
   spec.pod_target_xcconfig = current_pod_target_xcconfig.merge({
     # Use C++ 20
     "CLANG_CXX_LANGUAGE_STANDARD" => "c++20",
-    # Enables C++ <-> Swift interop (by default it's only C)
+    # Enables C++ <-> Swift interop (by default it's only ObjC)
     "SWIFT_OBJC_INTEROP_MODE" => "objcxx",
     # Enables stricter modular headers
     "DEFINES_MODULE" => "YES",

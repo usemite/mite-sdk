@@ -32,7 +32,6 @@
     "plugins": [
       "expo-router",
       "expo-font",
-      "@mite/mite-sdk",
       [
         "expo-build-properties",
         {

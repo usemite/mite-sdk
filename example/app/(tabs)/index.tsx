@@ -1,14 +1,7 @@
 import ParallaxScrollView from '@/components/ParallaxScrollView'
 import { BugReport, useMite } from '@mite/mite-sdk'
 import { useRouter } from 'expo-router'
-import {
-  Image,
-  Pressable,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from 'react-native'
+import { Image, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
 
 export default function HomeScreen() {
   const mite = useMite()

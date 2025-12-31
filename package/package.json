@@ -30,7 +30,7 @@
     "clean": "rm -rf android/build node_modules/**/android/build lib",
     "lint": "biome lint --fix",
     "typescript": "tsc --noEmit false",
-    "specs": "bun run --filter=\"**\" typescript && bun nitro-codegen --logLevel=\"debug\""
+    "specs": "bun run --filter=\"**\" typescript && bun nitrogen --logLevel=\"debug\""
   },
   "keywords": [
     "react-native",
@@ -50,15 +50,18 @@
     "registry": "https://registry.npmjs.org/"
   },
   "peerDependencies": {
-    "expo-constants": "^17.0.2",
-    "expo-device": "^7.0.1",
-    "expo-sqlite": "^15.0.0",
+    "expo-constants": "*",
+    "expo-device": "*",
+    "expo-sqlite": "*",
+    "expo-image-picker": "*",
     "react": "*",
-    "react-native": "~0.79.2",
+    "react-native": "*",
     "react-native-nitro-modules": "*"
   },
   "dependencies": {
-    "axios": "^1.9.0",
-    "expo-image-picker": "^16.1.4"
+    "axios": "^1.13.2"
+  },
+  "devDependencies": {
+    "@types/react": "^19.1.0"
   }
 }

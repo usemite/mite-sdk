@@ -40,7 +40,7 @@ namespace margelo::nitro::mite {
       explicit HybridMiteSDKSpec(): HybridObject(TAG) { }
 
       // Destructor
-      virtual ~HybridMiteSDKSpec() { }
+      ~HybridMiteSDKSpec() override = default;
 
     public:
       // Properties

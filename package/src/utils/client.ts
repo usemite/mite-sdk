@@ -1,6 +1,6 @@
 import axios, { type AxiosInstance, type AxiosRequestConfig } from 'axios'
 
-const BASE_URL = 'http://localhost:3000'
+const BASE_URL = 'https://hallowed-armadillo-23.convex.site'
 
 export interface ApiClientOptions {
   timeout?: number
@@ -79,7 +79,7 @@ export class ApiClient {
 
         retryCount += 1
         const backoff = Math.min(1000 * 2 ** retryCount, 10000)
-        await new Promise(resolve => setTimeout(resolve, backoff))
+        await new Promise<void>(resolve => setTimeout(resolve, backoff))
 
         return this.client(config)
       },
@@ -103,10 +103,7 @@ export class ApiClient {
   /**
    * Send a GET request
    */
-  public async get<T = unknown>(
-    url: string,
-    config?: AxiosRequestConfig,
-  ): Promise<T> {
+  public async get<T = unknown>(url: string, config?: AxiosRequestConfig): Promise<T> {
     const response = await this.client.get<T>(url, config)
     return response.data
   }
@@ -138,10 +135,7 @@ export class ApiClient {
   /**
    * Send a DELETE request
    */
-  public async delete<T = unknown>(
-    url: string,
-    config?: AxiosRequestConfig,
-  ): Promise<T> {
+  public async delete<T = unknown>(url: string, config?: AxiosRequestConfig): Promise<T> {
     const response = await this.client.delete<T>(url, config)
     return response.data
   }

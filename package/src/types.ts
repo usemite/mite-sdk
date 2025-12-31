@@ -2,15 +2,36 @@ import type Device from 'expo-device'
 import type { ApiClient } from './utils/client'
 
 export interface MiteConfig {
-  appId: string
-  publicKey: string
+  // appId: string
+  // publicKey: string
+  apiKey?: string
   endpoint?: string
   timeout?: number
   retries?: number
 }
 
+export type ReleasePlatform = 'ios' | 'android' | 'all'
+
+export interface Release {
+  id: string
+  version: string
+  versionCode: number
+  platform: ReleasePlatform
+  notes?: string
+  releasedAt?: number
+  createdAt: number
+}
+
+export interface ReleasesResponse {
+  releases: Release[]
+}
+
+export interface GetReleasesOptions {
+  platform?: ReleasePlatform
+  limit?: number
+}
+
 export interface ErrorReportConfig {
-  miteConfig: MiteConfig
   deviceInfo: typeof Device
   apiClient: ApiClient
 }

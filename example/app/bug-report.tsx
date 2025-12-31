@@ -32,8 +32,7 @@ export default function BugReportScreen() {
   })
 
   const [errors, setErrors] = useState<Record<string, string>>({})
-  const [images, setImages] =
-    useState<Array<ImagePicker.ImagePickerAsset> | null>(null)
+  const [images, setImages] = useState<Array<ImagePicker.ImagePickerAsset> | null>(null)
 
   const tintColor = useThemeColor({}, 'tint')
   const backgroundColor = useThemeColor({}, 'background')
@@ -63,10 +62,7 @@ export default function BugReportScreen() {
       newErrors.description = 'Description is required'
     }
 
-    if (
-      formData.reporterEmail &&
-      !/\S+@\S+\.\S+/.test(formData.reporterEmail)
-    ) {
+    if (formData.reporterEmail && !/\S+@\S+\.\S+/.test(formData.reporterEmail)) {
       newErrors.reporterEmail = 'Please enter a valid email address'
     }
 
@@ -192,32 +188,29 @@ export default function BugReportScreen() {
           <View style={styles.prioritySection}>
             <ThemedText style={styles.priorityLabel}>Priority</ThemedText>
             <View style={styles.priorityButtons}>
-              {(['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'] as const).map(
-                priority => (
-                  <Pressable
-                    key={priority}
+              {(['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'] as const).map(priority => (
+                <Pressable
+                  key={priority}
+                  style={[
+                    styles.priorityButton,
+                    formData.priority === priority && {
+                      backgroundColor: tintColor,
+                    },
+                  ]}
+                  onPress={() => updateFormData('priority')(priority)}
+                >
+                  <Text
                     style={[
-                      styles.priorityButton,
-                      formData.priority === priority && {
-                        backgroundColor: tintColor,
+                      styles.priorityButtonText,
+                      {
+                        color: formData.priority === priority ? '#fff' : textColor,
                       },
                     ]}
-                    onPress={() => updateFormData('priority')(priority)}
                   >
-                    <Text
-                      style={[
-                        styles.priorityButtonText,
-                        {
-                          color:
-                            formData.priority === priority ? '#fff' : textColor,
-                        },
-                      ]}
-                    >
-                      {priority}
-                    </Text>
-                  </Pressable>
-                ),
-              )}
+                    {priority}
+                  </Text>
+                </Pressable>
+              ))}
             </View>
           </View>
 

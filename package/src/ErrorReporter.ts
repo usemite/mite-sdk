@@ -4,7 +4,6 @@ import type { ErrorReport, ErrorReportConfig, ErrorReporterInterface } from './t
 import type { ApiClient } from './utils/client'
 
 export class ErrorReporter implements ErrorReporterInterface {
-  private appId: string
   private deviceInfo: typeof Device
   private apiClient: ApiClient
   private client: AxiosInstance
@@ -12,8 +11,7 @@ export class ErrorReporter implements ErrorReporterInterface {
   private enabled = false
 
   constructor(config: ErrorReportConfig) {
-    const { miteConfig, apiClient } = config
-    this.appId = miteConfig.appId
+    const { apiClient } = config
     this.deviceInfo = config.deviceInfo
     this.apiClient = apiClient
     this.client = apiClient.getAxiosInstance()
@@ -25,7 +23,7 @@ export class ErrorReporter implements ErrorReporterInterface {
     }
 
     this.setupErrorHandler()
-    this.setupPromiseRejectionHandler()
+    // this.setupPromiseRejectionHandler()
 
     this.enabled = true
     this.initialized = true
@@ -42,19 +40,19 @@ export class ErrorReporter implements ErrorReporterInterface {
     }
   }
 
-  private setupPromiseRejectionHandler() {
-    const rejectionTracking = require('promise/setimmediate/rejection-tracking')
+  // private setupPromiseRejectionHandler() {
+  //   const rejectionTracking = require('promise/setimmediate/rejection-tracking')
 
-    rejectionTracking.enable({
-      allRejections: true,
-      onUnhandled: async (id: string, error: Record<string, unknown>) => {
-        await this.captureError(error, {
-          type: 'unhandledPromiseRejection',
-          promiseId: id,
-        })
-      },
-    })
-  }
+  //   rejectionTracking.enable({
+  //     allRejections: true,
+  //     onUnhandled: async (id: string, error: Record<string, unknown>) => {
+  //       await this.captureError(error, {
+  //         type: 'unhandledPromiseRejection',
+  //         promiseId: id,
+  //       })
+  //     },
+  //   })
+  // }
 
   private async sendErrorToServer(errorReport: ErrorReport) {
     if (!this.enabled || !this.initialized) return
@@ -62,7 +60,6 @@ export class ErrorReporter implements ErrorReporterInterface {
     try {
       await this.apiClient.post('/report-error', {
         timestamp: Date.now(),
-        appId: this.appId,
         error: {
           name: errorReport.error.error_name,
           message: errorReport.error.error_message,
@@ -75,7 +72,6 @@ export class ErrorReporter implements ErrorReporterInterface {
       })
     } catch (e) {
       // Error already logged by interceptor
-      // console.error('[Mite] Failed to send error to server:', e);
     }
   }
 

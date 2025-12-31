@@ -3,7 +3,14 @@ import { NitroModules } from 'react-native-nitro-modules'
 import { BugReporter } from './BugReporter'
 import { ErrorReporter } from './ErrorReporter'
 import type { MiteSDK as MiteSDKType } from './specs/MiteSDK.nitro'
-import type { ErrorReporterInterface, MiteConfig, SubmitBugReportPayload } from './types'
+import type {
+  ErrorReporterInterface,
+  GetReleasesOptions,
+  MiteConfig,
+  Release,
+  ReleasesResponse,
+  SubmitBugReportPayload,
+} from './types'
 import { ApiClient } from './utils/client'
 
 export const MiteSDK = NitroModules.createHybridObject<MiteSDKType>('MiteSDK')
@@ -15,22 +22,20 @@ export class Mite {
   private errorReporter: ErrorReporterInterface
   private bugReporter: BugReporter
   private nativeCrashHandlersEnabled = false
+  private apiKey?: string
 
   constructor(config: MiteConfig) {
+    this.apiKey = config.apiKey
     this.deviceInfo = Device
     this.apiClient = ApiClient.getInstance({
       timeout: config.timeout || 5000,
       maxRetries: config.retries,
-      headers: {
-        'x-app-public-key': config.publicKey,
-        'x-app-id': config.appId,
-      },
+      headers: config.apiKey
+        ? { Authorization: `Bearer ${config.apiKey}` }
+        : {},
     })
     const subConfig = { deviceInfo: this.deviceInfo, apiClient: this.apiClient }
-    this.errorReporter = new ErrorReporter({
-      miteConfig: config,
-      ...subConfig,
-    })
+    this.errorReporter = new ErrorReporter(subConfig)
     this.bugReporter = new BugReporter(subConfig)
   }
 
@@ -110,5 +115,32 @@ export class Mite {
 
   isEnabled(): boolean {
     return this.errorReporter.isEnabled()
+  }
+
+  async getReleases(options: GetReleasesOptions = {}): Promise<Release[]> {
+    if (!this.apiKey) {
+      throw new Error(
+        '[Mite] API key is required to fetch releases. Please provide apiKey in MiteConfig.',
+      )
+    }
+
+    const params = new URLSearchParams()
+    if (options.platform) {
+      params.append('platform', options.platform)
+    }
+    if (options.limit) {
+      params.append('limit', options.limit.toString())
+    }
+
+    const queryString = params.toString()
+    const url = `/api/v1/releases${queryString ? `?${queryString}` : ''}`
+
+    const response = await this.apiClient.get<ReleasesResponse>(url, {
+      headers: {
+        Authorization: `Bearer ${this.apiKey}`,
+      },
+    })
+
+    return response.releases
   }
 }

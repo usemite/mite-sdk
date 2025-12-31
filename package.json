@@ -17,7 +17,7 @@
   "license": "MIT",
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
-    "nitro-codegen": "^0.25.2",
-    "typescript": "~5.8.3"
+    "nitrogen": "^0.32.0",
+    "typescript": "~5.9.2"
   }
 }
