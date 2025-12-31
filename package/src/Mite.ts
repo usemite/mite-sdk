@@ -1,8 +1,8 @@
 import * as Device from 'expo-device'
-import { NitroModules } from 'react-native-nitro-modules'
+// import { NitroModules } from 'react-native-nitro-modules'
 import { BugReporter } from './BugReporter'
 import { ErrorReporter } from './ErrorReporter'
-import type { MiteSDK as MiteSDKType } from './specs/MiteSDK.nitro'
+// import type { MiteSDK as MiteSDKType } from './specs/MiteSDK.nitro'
 import type {
   ErrorReporterInterface,
   GetReleasesOptions,
@@ -13,7 +13,7 @@ import type {
 } from './types'
 import { ApiClient } from './utils/client'
 
-export const MiteSDK = NitroModules.createHybridObject<MiteSDKType>('MiteSDK')
+// export const MiteSDK = NitroModules.createHybridObject<MiteSDKType>('MiteSDK')
 
 export class Mite {
   private deviceInfo: typeof Device
@@ -30,9 +30,7 @@ export class Mite {
     this.apiClient = ApiClient.getInstance({
       timeout: config.timeout || 5000,
       maxRetries: config.retries,
-      headers: config.apiKey
-        ? { Authorization: `Bearer ${config.apiKey}` }
-        : {},
+      headers: config.apiKey ? { Authorization: `Bearer ${config.apiKey}` } : {},
     })
     const subConfig = { deviceInfo: this.deviceInfo, apiClient: this.apiClient }
     this.errorReporter = new ErrorReporter(subConfig)
@@ -56,7 +54,7 @@ export class Mite {
     try {
       if (!this.nativeCrashHandlersEnabled) {
         console.log('[Mite] Installing native crash handlers')
-        MiteSDK.installCrashHandlers()
+        // MiteSDK.installCrashHandlers()
         this.nativeCrashHandlersEnabled = true
       }
     } catch (error) {
@@ -71,7 +69,7 @@ export class Mite {
     try {
       if (this.nativeCrashHandlersEnabled) {
         console.log('[Mite] Removing native crash handlers')
-        MiteSDK.removeCrashHandlers()
+        // MiteSDK.removeCrashHandlers()
         this.nativeCrashHandlersEnabled = false
       }
     } catch (error) {
