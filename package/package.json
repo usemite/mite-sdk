@@ -47,7 +47,8 @@
   },
   "homepage": "https://github.com/mitefix/mite-sdk#readme",
   "publishConfig": {
-    "registry": "https://registry.npmjs.org/"
+    "registry": "https://registry.npmjs.org/",
+    "access": "public"
   },
   "peerDependencies": {
     "expo-constants": "*",
