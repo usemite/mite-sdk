@@ -1,6 +1,5 @@
 import ParallaxScrollView from '@/components/ParallaxScrollView'
-import { type Release, useMite } from '@mite/mite-sdk'
-import { useCallback, useEffect, useState } from 'react'
+import { type Release, useReleases } from '@mite/mite-sdk'
 import {
   ActivityIndicator,
   Image,
@@ -11,30 +10,7 @@ import {
 } from 'react-native'
 
 export default function ReleasesScreen() {
-  const mite = useMite()
-  const [releases, setReleases] = useState<Release[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-
-  const fetchReleases = useCallback(async () => {
-    try {
-      setError(null)
-      setLoading(true)
-      const data = await mite.getReleases({ limit: 10 })
-
-      setReleases(data)
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to fetch releases'
-      setError(message)
-      console.error('[Releases] Error:', err)
-    } finally {
-      setLoading(false)
-    }
-  }, [mite])
-
-  useEffect(() => {
-    fetchReleases()
-  }, [fetchReleases])
+  const { releases, loading, error, refetch } = useReleases({ limit: 10 })
 
   const formatDate = (timestamp?: number) => {
     if (!timestamp) return 'Not released'
@@ -109,7 +85,7 @@ export default function ReleasesScreen() {
           </View>
           <TouchableOpacity
             style={styles.refreshButton}
-            onPress={fetchReleases}
+            onPress={refetch}
             disabled={loading}
           >
             <Text style={styles.refreshButtonText}>Refresh</Text>
@@ -125,8 +101,8 @@ export default function ReleasesScreen() {
 
         {error && (
           <View style={styles.errorContainer}>
-            <Text style={styles.errorText}>{error}</Text>
-            <TouchableOpacity style={styles.retryButton} onPress={fetchReleases}>
+            <Text style={styles.errorText}>{error.message}</Text>
+            <TouchableOpacity style={styles.retryButton} onPress={refetch}>
               <Text style={styles.retryText}>Retry</Text>
             </TouchableOpacity>
           </View>
