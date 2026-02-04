@@ -33,7 +33,7 @@ export class BugReporter {
     if (!this.enabled || !this.initialized) return
 
     try {
-      await this.apiClient.post('/api/bug-reports', {
+      await this.apiClient.post('/api/v1/bug-reports', {
         device_info: this.deviceInfo,
         ...payload,
       })
