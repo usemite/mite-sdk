@@ -88,3 +88,8 @@ export interface SubmitBugReportPayload {
   device_info?: Record<string, unknown>
   environment?: Record<string, unknown>
 }
+
+export interface SubmitBugReportResponse {
+  id: string
+  status: 'OPEN'
+}

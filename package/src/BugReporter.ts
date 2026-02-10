@@ -1,5 +1,5 @@
 import type Device from 'expo-device'
-import type { SubmitBugReportPayload } from './types'
+import type { SubmitBugReportPayload, SubmitBugReportResponse } from './types'
 import type { ApiClient } from './utils/client'
 
 interface BugReporterConfig {
@@ -29,16 +29,17 @@ export class BugReporter {
 
   async sendBugReportToServer(
     payload: Omit<SubmitBugReportPayload, 'appId' | 'deviceInfo'>,
-  ): Promise<void> {
-    if (!this.enabled || !this.initialized) return
+  ): Promise<SubmitBugReportResponse> {
+    if (!this.enabled || !this.initialized) {
+      throw new Error('[Mite] BugReporter is not initialized or enabled')
+    }
 
-    try {
-      await this.apiClient.post('/api/v1/bug-reports', {
+    return this.apiClient.post<SubmitBugReportResponse>(
+      '/api/v1/bug-reports',
+      {
         device_info: this.deviceInfo,
         ...payload,
-      })
-    } catch (error) {
-      console.error('Failed to send bug report:', error)
-    }
+      },
+    )
   }
 }
