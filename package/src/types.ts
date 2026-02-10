@@ -76,35 +76,20 @@ export interface ErrorReporterInterface extends Reporter {
 export interface SubmitBugReportPayload {
   title: string
   description: string
-  userIdentifier?: string // App's user ID
-  reporter_name?: string // Name of person reporting the bug
-  reporter_email?: string // Email of person reporting the bug
+  user_identifier?: string
+  anonymous_id?: string
+  reporter_name?: string
+  reporter_email?: string
   steps_to_reproduce?: string
   expected_behavior?: string
   actual_behavior?: string
-  priority?: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL' // Defaults to 'medium'
-  app_version?: string // Version of the app
-  device_info?: {
-    // Device information as JSON
-    os?: string
-    osVersion?: string
-    device?: string
-    manufacturer?: string
-    model?: string
-    screenWidth?: number
-    screenHeight?: number
-    batteryLevel?: number
-    isCharging?: boolean
-    connectivity?: string // wifi, cellular, etc.
-    [key: string]: unknown // Allow for custom device info
-  }
+  priority?: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL'
+  app_version?: string
+  device_info?: Record<string, unknown>
+  environment?: Record<string, unknown>
+}
 
-  // Environment information as JSON
-  // environment?: {
-  //   buildType?: 'debug' | 'release' | 'beta'
-  //   locale?: string
-  //   timezone?: string
-  //   userAgent?: string
-  //   [key: string]: any // Allow for custom environment info
-  // }
+export interface SubmitBugReportResponse {
+  id: string
+  status: 'OPEN'
 }

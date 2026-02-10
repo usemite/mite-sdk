@@ -10,6 +10,7 @@ import type {
   Release,
   ReleasesResponse,
   SubmitBugReportPayload,
+  SubmitBugReportResponse,
 } from './types'
 import { ApiClient } from './utils/client'
 
@@ -95,7 +96,9 @@ export class Mite {
    * @param payload
    * @returns
    */
-  async submitBug(payload: Omit<SubmitBugReportPayload, 'appId' | 'deviceInfo'>) {
+  async submitBug(
+    payload: Omit<SubmitBugReportPayload, 'appId' | 'deviceInfo'>,
+  ): Promise<SubmitBugReportResponse> {
     return this.bugReporter.sendBugReportToServer(payload)
   }
 

@@ -24,7 +24,7 @@
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.3",
-    "@mite/mite-sdk": "*",
+    "@usemite/mite-sdk": "*",
     "@react-navigation/bottom-tabs": "^7.9.0",
     "@react-navigation/elements": "^2.9.3",
     "expo": "~54.0.30",
