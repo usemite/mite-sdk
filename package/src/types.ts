@@ -86,6 +86,7 @@ export interface SubmitBugReportPayload {
   app_version?: string
   device_info?: Record<string, unknown>
   environment?: Record<string, unknown>
+  attachments?: Array<{ uri: string; type?: string; name?: string }>
 }
 
 export interface SubmitBugReportResponse {
