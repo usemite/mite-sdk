@@ -16,8 +16,39 @@ import { ApiClient } from './utils/client'
 
 // export const MiteSDK = NitroModules.createHybridObject<MiteSDKType>('MiteSDK')
 
+function getDeviceInfo(): Record<string, unknown> {
+  const deviceTypeMap: Record<number, string> = {
+    0: 'UNKNOWN',
+    1: 'PHONE',
+    2: 'TABLET',
+    3: 'DESKTOP',
+    4: 'TV',
+  }
+
+  return {
+    brand: Device.brand,
+    designName: Device.designName,
+    deviceName: Device.deviceName,
+    deviceType: deviceTypeMap[Device.deviceType ?? 0] ?? 'UNKNOWN',
+    deviceYearClass: Device.deviceYearClass,
+    isDevice: Device.isDevice,
+    manufacturer: Device.manufacturer,
+    modelId: Device.modelId,
+    modelName: Device.modelName,
+    osName: Device.osName,
+    osVersion: Device.osVersion,
+    osBuildId: Device.osBuildId,
+    osInternalBuildId: Device.osInternalBuildId,
+    osBuildFingerprint: Device.osBuildFingerprint,
+    platformApiLevel: Device.platformApiLevel,
+    productName: Device.productName,
+    supportedCpuArchitectures: Device.supportedCpuArchitectures,
+    totalMemory: Device.totalMemory,
+  }
+}
+
 export class Mite {
-  private deviceInfo: typeof Device
+  private deviceInfo: Record<string, unknown>
   private initialized = false
   private apiClient: ApiClient
   private errorReporter: ErrorReporterInterface
@@ -27,7 +58,7 @@ export class Mite {
 
   constructor(config: MiteConfig) {
     this.apiKey = config.apiKey
-    this.deviceInfo = Device
+    this.deviceInfo = getDeviceInfo()
     this.apiClient = ApiClient.getInstance({
       timeout: config.timeout || 5000,
       maxRetries: config.retries,

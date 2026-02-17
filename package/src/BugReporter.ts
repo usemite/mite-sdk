@@ -1,15 +1,14 @@
-import type Device from 'expo-device'
 import type { SubmitBugReportPayload, SubmitBugReportResponse } from './types'
 import type { ApiClient } from './utils/client'
 
 interface BugReporterConfig {
   apiClient: ApiClient
-  deviceInfo: typeof Device
+  deviceInfo: Record<string, unknown>
 }
 
 export class BugReporter {
   private apiClient: ApiClient
-  private deviceInfo: typeof Device
+  private deviceInfo: Record<string, unknown>
 
   constructor(config: BugReporterConfig) {
     const { apiClient, deviceInfo } = config
