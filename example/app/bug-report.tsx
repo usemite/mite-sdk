@@ -87,6 +87,11 @@ export default function BugReportScreen() {
         expected_behavior: formData.expectedBehavior || undefined,
         actual_behavior: formData.actualBehavior || undefined,
         priority: formData.priority,
+        attachments: images?.map(img => ({
+          uri: img.uri,
+          type: img.mimeType ?? undefined,
+          name: img.fileName ?? undefined,
+        })),
       })
       Alert.alert(
         'Bug Report Submitted',
