@@ -1,4 +1,3 @@
-import type Device from 'expo-device'
 import type { ApiClient } from './utils/client'
 
 export interface MiteConfig {
@@ -32,7 +31,7 @@ export interface GetReleasesOptions {
 }
 
 export interface ErrorReportConfig {
-  deviceInfo: typeof Device
+  deviceInfo: Record<string, unknown>
   apiClient: ApiClient
 }
 
@@ -42,7 +41,7 @@ export interface ErrorReportConfig {
 //   endpoint?: string
 //   timeout?: number
 //   retries?: number
-//   deviceInfo: typeof Device
+//   deviceInfo: Record<string, unknown>
 // }
 
 export interface ErrorReport {
@@ -54,7 +53,7 @@ export interface ErrorReport {
     type?: string
     promiseId?: string
   }
-  device: typeof Device
+  device: Record<string, unknown>
   metadata: Record<string, string | number | boolean>
 }
 

@@ -1,10 +1,9 @@
 import type { AxiosInstance } from 'axios'
-import type Device from 'expo-device'
 import type { ErrorReport, ErrorReportConfig, ErrorReporterInterface } from './types'
 import type { ApiClient } from './utils/client'
 
 export class ErrorReporter implements ErrorReporterInterface {
-  private deviceInfo: typeof Device
+  private deviceInfo: Record<string, unknown>
   private apiClient: ApiClient
   private client: AxiosInstance
   private initialized = false
