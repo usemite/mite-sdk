@@ -9,8 +9,6 @@ interface BugReporterConfig {
 
 export class BugReporter {
   private apiClient: ApiClient
-  private initialized = false
-  private enabled = false
   private deviceInfo: typeof Device
 
   constructor(config: BugReporterConfig) {
@@ -19,21 +17,9 @@ export class BugReporter {
     this.deviceInfo = deviceInfo
   }
 
-  init() {
-    if (this.initialized) {
-      return
-    }
-    this.initialized = true
-    this.enabled = true
-  }
-
   async sendBugReportToServer(
     payload: Omit<SubmitBugReportPayload, 'appId' | 'deviceInfo'>,
   ): Promise<SubmitBugReportResponse> {
-    if (!this.enabled || !this.initialized) {
-      throw new Error('[Mite] BugReporter is not initialized or enabled')
-    }
-
     return this.apiClient.post<SubmitBugReportResponse>(
       '/api/v1/bug-reports',
       {

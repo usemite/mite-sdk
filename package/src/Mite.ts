@@ -43,7 +43,6 @@ export class Mite {
       return
     }
     this.errorReporter.init()
-    this.bugReporter.init()
     // this.enableNativeCrashHandlers()
     this.initialized = true
   }
