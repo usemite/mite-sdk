@@ -60,6 +60,15 @@ await submitBug({
 })
 ```
 
+### Triage context
+
+Every report carries a flat `environment` record. Mite fills in `current_route`,
+`last_error_message`, `last_error_stack`, and `network_state` when it knows them, and
+your own `environment` keys always win. Uncaught JS errors are captured by default. Set
+`captureUncaughtErrors: false` to turn that off, and call `mite.recordError(error)` or
+the exported `recordError` to capture one yourself. `network_state` needs the optional
+`@react-native-community/netinfo` peer dependency.
+
 ## Documentation
 
 | Guide | |

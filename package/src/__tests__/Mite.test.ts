@@ -1,5 +1,6 @@
 import { Mite } from '../Mite'
 import { navigationTracker, recordNavigationBreadcrumb } from '../NavigationTracker'
+import { triageContext } from '../TriageContext'
 import type { MiteIdentityStorage } from '../types'
 
 // Mock axios
@@ -56,6 +57,8 @@ describe('Mite', () => {
     jest.clearAllMocks()
     navigationTracker.configure({ enabled: true })
     navigationTracker.clear()
+    triageContext.stop()
+    triageContext.clear()
     consoleLogSpy = jest.spyOn(console, 'log').mockImplementation()
     consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation()
     consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation()
@@ -775,7 +778,7 @@ describe('Mite', () => {
       expect(mockAxios.post).toHaveBeenCalledWith(
         '/api/v1/bug-reports',
         expect.objectContaining({
-          environment: { build_type: 'debug' },
+          environment: { build_type: 'debug', current_route: 'Settings' },
           navigation_trail: [
             expect.objectContaining({ screen: 'Home' }),
             expect.objectContaining({ screen: 'Settings' }),
@@ -1155,6 +1158,96 @@ describe('Mite', () => {
       const result = await mite.submitBug({ title: 'a', description: 'b' })
 
       expect(result.ok).toBe(false)
+    })
+  })
+
+  describe('triage context', () => {
+    it('merges the collected triage context into the environment', async () => {
+      mockAxios.post.mockResolvedValueOnce({ data: { id: 'bug-1', status: 'OPEN' } })
+
+      const mite = new Mite({ apiKey: 'test' })
+      recordNavigationBreadcrumb('Checkout')
+      mite.recordError(new Error('card declined'))
+
+      await mite.submitBug({ title: 'a', description: 'b' })
+
+      const body = mockAxios.post.mock.calls.at(-1)?.[1]
+      expect(body.environment).toEqual(
+        expect.objectContaining({
+          current_route: 'Checkout',
+          last_error_message: 'card declined',
+        }),
+      )
+      expect(body.environment.last_error_stack).toContain('card declined')
+    })
+
+    it('lets an app supplied environment key win over the collected one', async () => {
+      mockAxios.post.mockResolvedValueOnce({ data: { id: 'bug-1', status: 'OPEN' } })
+
+      const mite = new Mite({ apiKey: 'test' })
+      recordNavigationBreadcrumb('Checkout')
+
+      await mite.submitBug({
+        title: 'a',
+        description: 'b',
+        environment: { current_route: 'CheckoutOverride' },
+      })
+
+      const body = mockAxios.post.mock.calls.at(-1)?.[1]
+      expect(body.environment.current_route).toBe('CheckoutOverride')
+    })
+
+    it('omits environment entirely when nothing is known', async () => {
+      mockAxios.post.mockResolvedValueOnce({ data: { id: 'bug-1', status: 'OPEN' } })
+
+      const mite = new Mite({ apiKey: 'test' })
+      await mite.submitBug({ title: 'a', description: 'b' })
+
+      const body = mockAxios.post.mock.calls.at(-1)?.[1]
+      expect(body).toEqual(
+        expect.not.objectContaining({ environment: expect.anything() }),
+      )
+    })
+
+    it('does not install a global error handler when capture is disabled', () => {
+      const setGlobalHandler = jest.fn()
+      const globals = globalThis as Record<string, unknown>
+      globals.ErrorUtils = { setGlobalHandler, getGlobalHandler: () => undefined }
+
+      try {
+        new Mite({ apiKey: 'test', captureUncaughtErrors: false })
+        expect(setGlobalHandler).not.toHaveBeenCalled()
+      } finally {
+        globals.ErrorUtils = undefined
+      }
+    })
+
+    it('reports an uncaught error and still runs the previous handler', async () => {
+      mockAxios.post.mockResolvedValueOnce({ data: { id: 'bug-1', status: 'OPEN' } })
+      const previousHandler = jest.fn()
+      let installed: ((error: unknown, isFatal?: boolean) => void) | undefined
+      const globals = globalThis as Record<string, unknown>
+      globals.ErrorUtils = {
+        getGlobalHandler: () => previousHandler,
+        setGlobalHandler: (handler: (error: unknown, isFatal?: boolean) => void) => {
+          installed = handler
+        },
+      }
+
+      try {
+        const mite = new Mite({ apiKey: 'test' })
+        const uncaught = new Error('uncaught boom')
+        installed?.(uncaught, true)
+
+        expect(previousHandler).toHaveBeenCalledWith(uncaught, true)
+
+        await mite.submitBug({ title: 'a', description: 'b' })
+
+        const body = mockAxios.post.mock.calls.at(-1)?.[1]
+        expect(body.environment.last_error_message).toBe('uncaught boom')
+      } finally {
+        globals.ErrorUtils = undefined
+      }
     })
   })
 })

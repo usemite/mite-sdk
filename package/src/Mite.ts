@@ -2,6 +2,7 @@ import * as Device from 'expo-device'
 import { BugReporter } from './BugReporter'
 import { navigationTracker } from './NavigationTracker'
 import { OfflineQueue } from './OfflineQueue'
+import { triageContext } from './TriageContext'
 import type {
   Announcement,
   AnnouncementsResponse,
@@ -123,6 +124,9 @@ export class Mite {
       enabled: config.enableNavigationBreadcrumbs !== false,
       maxBreadcrumbs: config.maxNavigationBreadcrumbs,
     })
+    triageContext.start({
+      captureUncaughtErrors: config.captureUncaughtErrors !== false,
+    })
     this.identityReady = this.hydrateIdentityState()
   }
 
@@ -171,8 +175,17 @@ export class Mite {
       this.offlineQueue = null
     }
 
+    triageContext.stop()
     this.reportQuotaRefusal = null
     this.initialized = false
+  }
+
+  /**
+   * Manually record an error so the latest one is attached to bug reports.
+   * Useful inside a catch block or an error boundary.
+   */
+  recordError(error: unknown): void {
+    triageContext.recordError(error)
   }
 
   /**
@@ -769,6 +782,7 @@ export class Mite {
       reporter_email: _reporterEmail,
       device_info: _deviceInfo,
       navigation_trail: providedTrail,
+      environment: providedEnvironment,
       ...rest
     } = payload
     for (const field of ['priority', 'status', 'assigned_to', 'assignee']) {
@@ -776,12 +790,14 @@ export class Mite {
     }
     const anonymous_id = providedAnonymousId ?? this.currentAnonymousId
     const trail = providedTrail ?? navigationTracker.getTrail()
+    const environment = { ...triageContext.snapshot(), ...(providedEnvironment ?? {}) }
 
     if (this.identificationOptOut) {
       return {
         ...rest,
         anonymous_id,
         ...(trail.length > 0 ? { navigation_trail: trail } : {}),
+        ...(Object.keys(environment).length > 0 ? { environment } : {}),
       }
     }
 
@@ -791,6 +807,7 @@ export class Mite {
       ...rest,
       anonymous_id,
       ...(trail.length > 0 ? { navigation_trail: trail } : {}),
+      ...(Object.keys(environment).length > 0 ? { environment } : {}),
       ...(user_identifier ? { user_identifier } : {}),
       ...(_reporterName ? { reporter_name: _reporterName } : {}),
       ...(_reporterEmail ? { reporter_email: _reporterEmail } : {}),
