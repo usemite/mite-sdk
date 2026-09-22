@@ -108,3 +108,36 @@ export function loadViewShot(): ViewShotModule | null {
 
   return viewShot
 }
+
+export interface NetInfoStateLike {
+  type?: string
+  isConnected?: boolean | null
+  isInternetReachable?: boolean | null
+}
+
+export interface NetInfoModule {
+  addEventListener(listener: (state: NetInfoStateLike) => void): () => void
+}
+
+let netInfo: NetInfoModule | null | undefined
+
+/**
+ * Load @react-native-community/netinfo if it is installed in the host app.
+ * Returns null when the module is missing, and stays silent about it.
+ */
+export function loadNetInfo(): NetInfoModule | null {
+  if (netInfo !== undefined) {
+    return netInfo
+  }
+
+  try {
+    const mod = require('@react-native-community/netinfo') as
+      | Partial<NetInfoModule>
+      | undefined
+    netInfo = typeof mod?.addEventListener === 'function' ? (mod as NetInfoModule) : null
+  } catch {
+    netInfo = null
+  }
+
+  return netInfo
+}

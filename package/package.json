@@ -38,6 +38,7 @@
     "access": "public"
   },
   "peerDependencies": {
+    "@react-native-community/netinfo": "*",
     "@react-navigation/native": ">=6.0.0",
     "expo-application": ">=57.0.0",
     "expo-constants": ">=57.0.0",
@@ -50,6 +51,9 @@
     "react-native-view-shot": "*"
   },
   "peerDependenciesMeta": {
+    "@react-native-community/netinfo": {
+      "optional": true
+    },
     "@react-navigation/native": {
       "optional": true
     },
