@@ -46,6 +46,11 @@ export interface MiteConfig {
    */
   maxNavigationBreadcrumbs?: number
   /**
+   * Capture uncaught JS errors and attach the latest one to bug reports.
+   * @default true
+   */
+  captureUncaughtErrors?: boolean
+  /**
    * Called each time the server refuses a request because the account has
    * reached a plan limit. Use it to log the condition or to tell the user.
    * The SDK never throws for a quota refusal.

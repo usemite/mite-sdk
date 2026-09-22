@@ -6,6 +6,7 @@ import {
   recordNavigationBreadcrumb,
 } from './NavigationTracker'
 import { ShakeDetector } from './ShakeDetector'
+import { recordError } from './TriageContext'
 import { AnnouncementPopup, showAnnouncement } from './components/AnnouncementPopup'
 import { FeatureRequestsSheet } from './components/FeatureRequestsSheet'
 import { ScreenshotAnnotator } from './components/ScreenshotAnnotator'
@@ -27,6 +28,7 @@ export {
   getNavigationTrail,
   Mite,
   MiteProvider,
+  recordError,
   recordNavigationBreadcrumb,
   ScreenshotAnnotator,
   ShakeDetector,
