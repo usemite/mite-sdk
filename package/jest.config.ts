@@ -18,6 +18,8 @@ const config: Config = {
     ],
   },
   moduleNameMapper: {
+    '^@react-native-community/netinfo$':
+      '<rootDir>/src/__tests__/__mocks__/netinfo.ts',
     '^expo-device$': '<rootDir>/src/__tests__/__mocks__/expo-device.ts',
   },
 }

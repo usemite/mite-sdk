@@ -1197,6 +1197,18 @@ describe('Mite', () => {
       expect(body.environment.current_route).toBe('CheckoutOverride')
     })
 
+    it('omits environment entirely when nothing is known', async () => {
+      mockAxios.post.mockResolvedValueOnce({ data: { id: 'bug-1', status: 'OPEN' } })
+
+      const mite = new Mite({ apiKey: 'test' })
+      await mite.submitBug({ title: 'a', description: 'b' })
+
+      const body = mockAxios.post.mock.calls.at(-1)?.[1]
+      expect(body).toEqual(
+        expect.not.objectContaining({ environment: expect.anything() }),
+      )
+    })
+
     it('does not install a global error handler when capture is disabled', () => {
       const setGlobalHandler = jest.fn()
       const globals = globalThis as Record<string, unknown>

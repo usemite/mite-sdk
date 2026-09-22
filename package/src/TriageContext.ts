@@ -19,6 +19,8 @@ interface GlobalErrorUtils {
   setGlobalHandler?: (handler: GlobalErrorHandler) => void
 }
 
+const noopErrorHandler: GlobalErrorHandler = () => {}
+
 function getErrorUtils(): GlobalErrorUtils | null {
   const candidate = (globalThis as { ErrorUtils?: GlobalErrorUtils }).ErrorUtils
   if (
@@ -29,6 +31,14 @@ function getErrorUtils(): GlobalErrorUtils | null {
     return null
   }
   return candidate
+}
+
+function describeValue(value: unknown): string {
+  try {
+    return String(value)
+  } catch {
+    return ''
+  }
 }
 
 function truncate(value: string): string {
@@ -50,7 +60,7 @@ export class TriageContext {
   private error: RecordedError | null = null
   private network: string | null = null
   private started = false
-  private previousErrorHandler: GlobalErrorHandler | undefined
+  private previousErrorHandler: GlobalErrorHandler | null = null
   private installedErrorHandler: GlobalErrorHandler | null = null
   private unsubscribeNetInfo: (() => void) | null = null
 
@@ -69,7 +79,7 @@ export class TriageContext {
 
   recordError(value: unknown): void {
     const isError = value instanceof Error
-    const message = isError ? value.message : String(value)
+    const message = isError ? value.message : describeValue(value)
 
     if (!message.trim()) {
       return
@@ -141,7 +151,7 @@ export class TriageContext {
       previous?.(error, isFatal)
     }
 
-    this.previousErrorHandler = previous
+    this.previousErrorHandler = previous ?? null
     this.installedErrorHandler = handler
     errorUtils.setGlobalHandler?.(handler)
   }
@@ -153,12 +163,15 @@ export class TriageContext {
 
     const errorUtils = getErrorUtils()
     const previous = this.previousErrorHandler
+    const installed = this.installedErrorHandler
     this.installedErrorHandler = null
-    this.previousErrorHandler = undefined
+    this.previousErrorHandler = null
 
-    if (errorUtils && previous) {
-      errorUtils.setGlobalHandler?.(previous)
+    if (!errorUtils || errorUtils.getGlobalHandler?.() !== installed) {
+      return
     }
+
+    errorUtils.setGlobalHandler?.(previous ?? noopErrorHandler)
   }
 
   private subscribeToNetworkState(): void {
