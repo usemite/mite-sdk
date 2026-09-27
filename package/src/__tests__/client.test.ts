@@ -33,7 +33,7 @@ describe('ApiClient', () => {
 
     expect(axios.create).toHaveBeenCalledWith(
       expect.objectContaining({
-        baseURL: 'https://intent-okapi-412.convex.site',
+        baseURL: 'https://usemite.com',
         timeout: 10000,
       }),
     )

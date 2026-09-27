@@ -13,6 +13,10 @@ export interface MiteMMKVLikeStorage {
 
 export interface MiteConfig {
   apiKey?: string
+  /**
+   * The Mite API origin.
+   * @default 'https://usemite.com'
+   */
   endpoint?: string
   timeout?: number
   retries?: number
@@ -191,7 +195,12 @@ export interface SubmitBugReportPayload {
   steps_to_reproduce?: string
   expected_behavior?: string
   actual_behavior?: string
+  /** Detected from expo-application or expo-constants when omitted. */
   app_version?: string
+  /** The running EAS Update, detected from expo-updates when omitted. */
+  eas_update_id?: string
+  channel?: string
+  runtime_version?: string
   device_info?: Record<string, unknown>
   environment?: Record<string, unknown>
   navigation_trail?: NavigationBreadcrumb[]

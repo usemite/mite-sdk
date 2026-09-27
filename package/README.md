@@ -69,6 +69,13 @@ your own `environment` keys always win. Uncaught JS errors are captured by defau
 the exported `recordError` to capture one yourself. `network_state` needs the optional
 `@react-native-community/netinfo` peer dependency.
 
+### Release matching
+
+Reports carry the build they came from, so Mite files each one under the release
+the user was running. `app_version` comes from `expo-application` (or
+`expo-constants`), and `eas_update_id`, `channel`, and `runtime_version` come from
+`expo-updates` when it is installed. Pass any of them to `submitBug` to override.
+
 ## Documentation
 
 | Guide | |
