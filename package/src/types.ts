@@ -50,10 +50,31 @@ export interface MiteConfig {
    */
   maxNavigationBreadcrumbs?: number
   /**
-   * Capture uncaught JS errors and attach the latest one to bug reports.
+   * Capture uncaught JS errors: send them to Mite and attach the latest one
+   * to bug reports.
    * @default true
    */
   captureUncaughtErrors?: boolean
+  /**
+   * Capture promise rejections nobody handled. Hermes only.
+   * @default true
+   */
+  captureUnhandledRejections?: boolean
+  /**
+   * Send captured JS errors to Mite, where they are grouped and triaged.
+   * Set to false to keep only the latest error for bug reports.
+   * @default true
+   */
+  enableErrorTracking?: boolean
+  /**
+   * Drop errors whose message contains one of these strings or matches one
+   * of these patterns.
+   */
+  ignoreErrors?: Array<string | RegExp>
+  /**
+   * Inspect or scrub an error before it is sent. Return null to drop it.
+   */
+  beforeSendError?: (event: MiteErrorEvent) => MiteErrorEvent | null
   /**
    * Called each time the server refuses a request because the account has
    * reached a plan limit. Use it to log the condition or to tell the user.
@@ -205,6 +226,25 @@ export interface SubmitBugReportPayload {
   environment?: Record<string, unknown>
   navigation_trail?: NavigationBreadcrumb[]
   attachments?: Array<{ uri: string; type?: string; name?: string }>
+}
+
+/** One JS error occurrence, as sent to `POST /api/v1/errors`. */
+export interface MiteErrorEvent {
+  name: string
+  message: string
+  stack?: string
+  is_fatal: boolean
+  handled: boolean
+  occurred_at: number
+  user_identifier?: string
+  anonymous_id?: string
+  app_version?: string
+  eas_update_id?: string
+  channel?: string
+  runtime_version?: string
+  device_info?: Record<string, string>
+  environment?: Record<string, string>
+  navigation_trail?: NavigationBreadcrumb[]
 }
 
 export interface SubmitBugReportResponse {

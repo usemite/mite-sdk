@@ -6,9 +6,10 @@ import {
   recordNavigationBreadcrumb,
 } from './NavigationTracker'
 import { ShakeDetector } from './ShakeDetector'
-import { recordError } from './TriageContext'
+import { captureError, recordError } from './TriageContext'
 import { AnnouncementPopup, showAnnouncement } from './components/AnnouncementPopup'
 import { FeatureRequestsSheet } from './components/FeatureRequestsSheet'
+import { MiteErrorBoundary } from './components/MiteErrorBoundary'
 import { ScreenshotAnnotator } from './components/ScreenshotAnnotator'
 import { ShakeToReport } from './components/ShakeToReport'
 import { StoreReviewPrompt } from './components/StoreReviewPrompt'
@@ -23,10 +24,12 @@ import { useWhatsNew } from './useWhatsNew'
 
 export {
   AnnouncementPopup,
+  captureError,
   clearNavigationTrail,
   FeatureRequestsSheet,
   getNavigationTrail,
   Mite,
+  MiteErrorBoundary,
   MiteProvider,
   recordError,
   recordNavigationBreadcrumb,
@@ -57,6 +60,7 @@ export type {
   FeatureRequestsResponse,
   FeatureRequestVotesResponse,
   MiteConfig,
+  MiteErrorEvent,
   MiteIdentityStorage,
   MiteMMKVLikeStorage,
   MiteQuota,
@@ -75,6 +79,11 @@ export type {
 } from './types'
 export type { UseBugReportResult, BugReportPayload } from './useBugReport'
 export type { FeatureRequestsSheetProps } from './components/FeatureRequestsSheet'
+export type {
+  MiteErrorBoundaryFallbackProps,
+  MiteErrorBoundaryProps,
+} from './components/MiteErrorBoundary'
+export type { CaptureOptions } from './ErrorTracker'
 export type {
   SubmitFeatureRequestInput,
   UseFeatureRequestsOptions,
