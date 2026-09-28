@@ -305,6 +305,23 @@ describe('Mite', () => {
       )
     })
 
+    it('sends isPaying as metadata.is_paying', async () => {
+      mockAxios.post.mockResolvedValueOnce({
+        data: { id: '123', created: true },
+      })
+
+      const mite = new Mite({ apiKey: 'test' })
+      await mite.identify({
+        user_identifier: 'user1',
+        metadata: { plan: 'pro' },
+        isPaying: true,
+      })
+
+      const body = mockAxios.post.mock.calls.at(-1)?.[1]
+      expect(body.metadata).toEqual({ plan: 'pro', is_paying: true })
+      expect(body).not.toHaveProperty('isPaying')
+    })
+
     it('normalizes default device_info values to strings for identify', async () => {
       mockAxios.post.mockResolvedValueOnce({
         data: { id: '123', created: true },
