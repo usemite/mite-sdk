@@ -24,6 +24,7 @@ import type {
   VoteFeatureRequestPayload,
   VoteFeatureRequestResponse,
 } from './types'
+import { type BuildInfo, getBuildInfo } from './utils/buildInfo'
 import { ApiClient } from './utils/client'
 import { type FlatStringRecord, normalizeDeviceInfo } from './utils/deviceInfo'
 import { generateAnonymousId } from './utils/identity'
@@ -76,6 +77,7 @@ function getDeviceInfo(): FlatStringRecord {
 
 export class Mite {
   private deviceInfo: FlatStringRecord
+  private buildInfo: BuildInfo
   private apiClient: ApiClient
   private bugReporter: BugReporter
   private apiKey?: string
@@ -104,6 +106,7 @@ export class Mite {
     this.identityStorage = identityStorage.storage
     this.hasPersistentIdentityStorage = identityStorage.isPersistent
     this.deviceInfo = getDeviceInfo()
+    this.buildInfo = getBuildInfo()
     this.apiClient = new ApiClient({
       baseUrl: config.endpoint,
       timeout: config.timeout || 5000,
@@ -760,13 +763,14 @@ export class Mite {
     }
 
     const user_identifier = payload.user_identifier ?? this.currentUserIdentifier
+    const appVersion = payload.app_version ?? this.buildInfo.app_version
 
     return {
       anonymous_id,
       ...(user_identifier ? { user_identifier } : {}),
       ...(payload.email ? { email: payload.email } : {}),
       ...(payload.name ? { name: payload.name } : {}),
-      ...(payload.app_version ? { app_version: payload.app_version } : {}),
+      ...(appVersion ? { app_version: appVersion } : {}),
       ...(payload.metadata ? { metadata: payload.metadata } : {}),
       device_info: normalizeDeviceInfo(payload.device_info ?? this.deviceInfo),
     }
@@ -794,6 +798,7 @@ export class Mite {
 
     if (this.identificationOptOut) {
       return {
+        ...this.buildInfo,
         ...rest,
         anonymous_id,
         ...(trail.length > 0 ? { navigation_trail: trail } : {}),
@@ -804,6 +809,7 @@ export class Mite {
     const user_identifier = providedUserIdentifier ?? this.currentUserIdentifier
 
     return {
+      ...this.buildInfo,
       ...rest,
       anonymous_id,
       ...(trail.length > 0 ? { navigation_trail: trail } : {}),

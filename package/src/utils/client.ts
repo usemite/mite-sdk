@@ -1,6 +1,6 @@
 import axios, { type AxiosInstance, type AxiosRequestConfig } from 'axios'
 
-const DEFAULT_BASE_URL = 'https://intent-okapi-412.convex.site'
+export const DEFAULT_BASE_URL = 'https://usemite.com'
 const RETRY_COUNT_HEADER = '__mite_retry_count'
 
 export interface ApiClientOptions {
