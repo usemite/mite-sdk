@@ -69,6 +69,33 @@ your own `environment` keys always win. Uncaught JS errors are captured by defau
 the exported `recordError` to capture one yourself. `network_state` needs the optional
 `@react-native-community/netinfo` peer dependency.
 
+### Error tracking
+
+Mite captures uncaught JS errors and unhandled promise rejections (Hermes) and
+sends them in batches. Each occurrence joins a group for the same error, and
+triage labels the group as a duplicate, recurring, a real issue, a non-issue, or
+noise. Real issues become bug reports in your dashboard.
+
+```tsx
+import { captureError, MiteErrorBoundary } from '@usemite/sdk'
+
+try {
+  await checkout()
+} catch (error) {
+  captureError(error) // sent as handled; also attached to the next bug report
+}
+
+// Catch render errors with their component stack.
+<MiteErrorBoundary fallback={({ reset }) => <Retry onPress={reset} />}>
+  <App />
+</MiteErrorBoundary>
+```
+
+Errors that take the app down are kept in `identityStorage` and sent on the next
+launch; a synchronous store like MMKV makes that most reliable. Tune it with
+`ignoreErrors`, `beforeSendError` (return `null` to drop an event), or turn it off
+with `enableErrorTracking: false`. Errors do not count against your report quota.
+
 ### Release matching
 
 Reports carry the build they came from, so Mite files each one under the release

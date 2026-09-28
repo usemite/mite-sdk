@@ -1,3 +1,4 @@
+import type { CaptureOptions } from './ErrorTracker'
 import { navigationTracker } from './NavigationTracker'
 import { type NetInfoStateLike, loadNetInfo } from './utils/optionalModules'
 
@@ -5,12 +6,19 @@ const MAX_ENVIRONMENT_VALUE_LENGTH = 2000
 
 interface TriageContextStartOptions {
   captureUncaughtErrors: boolean
+  /**
+   * Receives every error the context sees: uncaught ones before the previous
+   * handler runs, and the ones the app records itself.
+   */
+  errorSink?: ErrorSink
 }
 
 interface RecordedError {
   message: string
   stack: string | null
 }
+
+type ErrorSink = (error: unknown, options: CaptureOptions) => void
 
 type GlobalErrorHandler = (error: unknown, isFatal?: boolean) => void
 
@@ -63,6 +71,7 @@ export class TriageContext {
   private previousErrorHandler: GlobalErrorHandler | null = null
   private installedErrorHandler: GlobalErrorHandler | null = null
   private unsubscribeNetInfo: (() => void) | null = null
+  private errorSink: ErrorSink | undefined = undefined
 
   get currentRoute(): string | null {
     const trail = navigationTracker.getTrail()
@@ -77,7 +86,24 @@ export class TriageContext {
     return this.network
   }
 
-  recordError(value: unknown): void {
+  /**
+   * Keep the error for bug reports and pass it on to error tracking. An error
+   * the app records itself is handled unless the options say otherwise.
+   */
+  recordError(value: unknown, options: CaptureOptions = {}): void {
+    this.remember(value)
+    this.sink(value, { handled: true, ...options })
+  }
+
+  private sink(value: unknown, options: CaptureOptions): void {
+    try {
+      this.errorSink?.(value, options)
+    } catch {
+      // Never let reporting break the caller's own error path.
+    }
+  }
+
+  private remember(value: unknown): void {
     const isError = value instanceof Error
     const message = isError ? value.message : describeValue(value)
 
@@ -116,6 +142,7 @@ export class TriageContext {
       return
     }
     this.started = true
+    this.errorSink = options.errorSink
 
     if (options.captureUncaughtErrors) {
       this.installErrorHandler()
@@ -128,6 +155,7 @@ export class TriageContext {
       return
     }
     this.started = false
+    this.errorSink = undefined
 
     this.removeErrorHandler()
     this.unsubscribeNetInfo?.()
@@ -147,7 +175,8 @@ export class TriageContext {
 
     const previous = errorUtils.getGlobalHandler?.()
     const handler: GlobalErrorHandler = (error, isFatal) => {
-      this.recordError(error)
+      this.remember(error)
+      this.sink(error, { fatal: isFatal === true, handled: false })
       previous?.(error, isFatal)
     }
 
@@ -189,9 +218,12 @@ export class TriageContext {
 export const triageContext = new TriageContext()
 
 /**
- * Manually record an error so the latest one is attached to bug reports.
- * Useful inside a catch block or an error boundary.
+ * Record an error the app caught: it is sent to Mite for tracking and the
+ * latest one is attached to bug reports. Useful inside a catch block.
  */
-export function recordError(error: unknown): void {
-  triageContext.recordError(error)
+export function recordError(error: unknown, options?: CaptureOptions): void {
+  triageContext.recordError(error, options)
 }
+
+/** Alias of `recordError`, for code that reads better with Sentry's verb. */
+export const captureError = recordError

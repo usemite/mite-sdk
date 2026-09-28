@@ -1,5 +1,6 @@
 import * as Device from 'expo-device'
 import { BugReporter } from './BugReporter'
+import { type CaptureOptions, ErrorTracker, type SendOutcome } from './ErrorTracker'
 import { navigationTracker } from './NavigationTracker'
 import { OfflineQueue } from './OfflineQueue'
 import { triageContext } from './TriageContext'
@@ -15,6 +16,7 @@ import type {
   IdentifyUserPayload,
   IdentifyUserResponse,
   MiteConfig,
+  MiteErrorEvent,
   MiteIdentityStorage,
   MiteQuotaRefusal,
   Release,
@@ -28,6 +30,7 @@ import { type BuildInfo, getBuildInfo } from './utils/buildInfo'
 import { ApiClient } from './utils/client'
 import { type FlatStringRecord, normalizeDeviceInfo } from './utils/deviceInfo'
 import { generateAnonymousId } from './utils/identity'
+import { trackUnhandledRejections } from './utils/rejectionTracking'
 import { resolveIdentityStorage } from './utils/storage'
 import { isStoreReviewAvailable, requestStoreReview } from './utils/storeReview'
 
@@ -75,6 +78,26 @@ function getDeviceInfo(): FlatStringRecord {
   })
 }
 
+function subscribeToBackground(onBackground: () => void): { remove(): void } | null {
+  try {
+    const { AppState } = require('react-native') as {
+      AppState?: {
+        addEventListener?: (
+          type: 'change',
+          listener: (state: string) => void,
+        ) => { remove(): void }
+      }
+    }
+    return (
+      AppState?.addEventListener?.('change', state => {
+        if (state === 'background' || state === 'inactive') onBackground()
+      }) ?? null
+    )
+  } catch {
+    return null
+  }
+}
+
 export class Mite {
   private deviceInfo: FlatStringRecord
   private buildInfo: BuildInfo
@@ -83,6 +106,8 @@ export class Mite {
   private apiKey?: string
   private config: MiteConfig
   private offlineQueue: OfflineQueue | null = null
+  private errorTracker: ErrorTracker | null = null
+  private appStateSubscription: { remove(): void } | null = null
   private initialized = false
   private identityStorage: MiteIdentityStorage
   private hasPersistentIdentityStorage: boolean
@@ -127,8 +152,18 @@ export class Mite {
       enabled: config.enableNavigationBreadcrumbs !== false,
       maxBreadcrumbs: config.maxNavigationBreadcrumbs,
     })
+    if (this.apiKey && config.enableErrorTracking !== false) {
+      this.errorTracker = new ErrorTracker({
+        send: events => this.sendErrorEvents(events),
+        contextFor: () => this.errorContext(),
+        storage: this.identityStorage,
+        ignoreErrors: config.ignoreErrors,
+        beforeSend: config.beforeSendError,
+      })
+    }
     triageContext.start({
       captureUncaughtErrors: config.captureUncaughtErrors !== false,
+      errorSink: (error, options) => this.errorTracker?.capture(error, options),
     })
     this.identityReady = this.hydrateIdentityState()
   }
@@ -156,6 +191,19 @@ export class Mite {
       console.log('[Mite] Offline queue enabled')
     }
 
+    if (this.errorTracker) {
+      const tracker = this.errorTracker
+      void this.ensureIdentityReady().then(() => tracker.restore())
+      if (this.config.captureUnhandledRejections !== false) {
+        trackUnhandledRejections(rejection =>
+          this.errorTracker?.capture(rejection, { handled: false }),
+        )
+      }
+      this.appStateSubscription = subscribeToBackground(() => {
+        void this.errorTracker?.flush()
+      })
+    }
+
     this.initialized = true
     console.log('[Mite] SDK initialized')
     if (!this.hasPersistentIdentityStorage) {
@@ -179,16 +227,31 @@ export class Mite {
     }
 
     triageContext.stop()
+    trackUnhandledRejections(null)
+    this.errorTracker?.destroy()
+    this.appStateSubscription?.remove()
+    this.appStateSubscription = null
     this.reportQuotaRefusal = null
     this.initialized = false
   }
 
   /**
-   * Manually record an error so the latest one is attached to bug reports.
-   * Useful inside a catch block or an error boundary.
+   * Record an error the app caught. It is sent to Mite, grouped with every
+   * other occurrence of the same error, and triaged; the latest one is also
+   * attached to bug reports. Useful inside a catch block.
    */
-  recordError(error: unknown): void {
-    triageContext.recordError(error)
+  recordError(error: unknown, options?: CaptureOptions): void {
+    triageContext.recordError(error, options)
+  }
+
+  /** Alias of `recordError`. */
+  captureError(error: unknown, options?: CaptureOptions): void {
+    triageContext.recordError(error, options)
+  }
+
+  /** Send captured errors now rather than on the next batch. */
+  async flushErrors(): Promise<void> {
+    await this.errorTracker?.flush()
   }
 
   /**
@@ -623,6 +686,57 @@ export class Mite {
    * The gate saves a request that cannot succeed. It must never be the reason
    * a report is lost, so a refusal with no reset time does not close it.
    */
+  /**
+   * Everything an error carries besides itself, read at capture time so the
+   * route and trail are the ones the user was on. Identity is stamped at send
+   * time instead, once the persisted identity has loaded.
+   */
+  private errorContext(): Omit<
+    MiteErrorEvent,
+    'name' | 'message' | 'stack' | 'is_fatal' | 'handled' | 'occurred_at'
+  > {
+    const { last_error_message, last_error_stack, ...environment } =
+      triageContext.snapshot()
+    const trail = navigationTracker.getTrail()
+    return {
+      ...this.buildInfo,
+      ...(this.identificationOptOut ? {} : { device_info: this.deviceInfo }),
+      ...(Object.keys(environment).length > 0 ? { environment } : {}),
+      ...(trail.length > 0 ? { navigation_trail: trail } : {}),
+    }
+  }
+
+  private async sendErrorEvents(events: MiteErrorEvent[]): Promise<SendOutcome> {
+    await this.ensureIdentityReady()
+    const identity = {
+      anonymous_id: this.currentAnonymousId,
+      ...(this.identificationOptOut || !this.currentUserIdentifier
+        ? {}
+        : { user_identifier: this.currentUserIdentifier }),
+    }
+    const stamped = events.map(
+      ({ user_identifier: _user, anonymous_id: _anonymous, device_info, ...rest }) => ({
+        ...rest,
+        ...identity,
+        // An event captured before the user opted out still loses its device.
+        ...(device_info && !this.identificationOptOut ? { device_info } : {}),
+      }),
+    )
+    try {
+      await this.apiClient.post('/api/v1/errors', { events: stamped })
+      return 'sent'
+    } catch (err) {
+      const status = (err as { response?: { status?: number } })?.response?.status
+      if (typeof status === 'number' && status >= 400 && status < 500 && status !== 429) {
+        console.warn(
+          `[Mite] Dropped ${events.length} error event(s): server said ${status}`,
+        )
+        return 'drop'
+      }
+      return 'retry'
+    }
+  }
+
   private rememberReportQuotaRefusal(refusal: MiteQuotaRefusal): void {
     if (refusal.code !== 'REPORT_QUOTA_EXCEEDED') return
     if (typeof refusal.quota.resetsAt !== 'number') return
