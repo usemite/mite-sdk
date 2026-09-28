@@ -306,6 +306,8 @@ export interface IdentifyUserPayload {
   device_info?: Record<string, unknown>
   app_version?: string
   metadata?: Record<string, unknown>
+  /** Whether the user pays for your app. Mite alerts you when a paying user's report shows churn risk. */
+  isPaying?: boolean
 }
 
 export interface IdentifyUserResponse {

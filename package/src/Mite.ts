@@ -878,6 +878,10 @@ export class Mite {
 
     const user_identifier = payload.user_identifier ?? this.currentUserIdentifier
     const appVersion = payload.app_version ?? this.buildInfo.app_version
+    const metadata =
+      payload.isPaying === undefined
+        ? payload.metadata
+        : { ...payload.metadata, is_paying: payload.isPaying }
 
     return {
       anonymous_id,
@@ -885,7 +889,7 @@ export class Mite {
       ...(payload.email ? { email: payload.email } : {}),
       ...(payload.name ? { name: payload.name } : {}),
       ...(appVersion ? { app_version: appVersion } : {}),
-      ...(payload.metadata ? { metadata: payload.metadata } : {}),
+      ...(metadata ? { metadata } : {}),
       device_info: normalizeDeviceInfo(payload.device_info ?? this.deviceInfo),
     }
   }
