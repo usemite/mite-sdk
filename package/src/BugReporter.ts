@@ -1,5 +1,6 @@
 import type {
   MiteQuotaRefusal,
+  ReportWirePayload,
   SubmitBugReportPayload,
   SubmitBugReportResponse,
   SubmitBugResult,
@@ -15,7 +16,11 @@ interface BugReporterConfig {
 
 interface SendBugReportOptions {
   includeDefaultDeviceInfo?: boolean
+  /** `/api/v1/feedback`, or `/api/v1/bug-reports` for the 1.0.0 call. */
+  path?: ReportPath
 }
+
+export type ReportPath = '/api/v1/feedback' | '/api/v1/bug-reports'
 
 interface UploadedAttachment {
   storage_id: string
@@ -108,11 +113,11 @@ export class BugReporter {
   }
 
   async sendBugReportToServer(
-    payload: Omit<SubmitBugReportPayload, 'appId' | 'deviceInfo'>,
+    payload: ReportWirePayload,
     options: SendBugReportOptions = {},
   ): Promise<SubmitBugResult> {
     const { attachments: localAttachments, device_info, ...rest } = payload
-    const { includeDefaultDeviceInfo = true } = options
+    const { includeDefaultDeviceInfo = true, path = '/api/v1/bug-reports' } = options
 
     let attachments: UploadedAttachment[] | undefined
     let droppedAttachments: { count: number; refusal: MiteQuotaRefusal } | undefined
@@ -146,10 +151,7 @@ export class BugReporter {
     }
 
     try {
-      const report = await this.apiClient.post<SubmitBugReportResponse>(
-        '/api/v1/bug-reports',
-        requestBody,
-      )
+      const report = await this.apiClient.post<SubmitBugReportResponse>(path, requestBody)
 
       return droppedAttachments
         ? { ok: true, report, droppedAttachments }

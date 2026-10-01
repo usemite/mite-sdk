@@ -1,5 +1,5 @@
 import * as Device from 'expo-device'
-import { BugReporter } from './BugReporter'
+import { BugReporter, type ReportPath } from './BugReporter'
 import { type CaptureOptions, ErrorTracker, type SendOutcome } from './ErrorTracker'
 import { navigationTracker } from './NavigationTracker'
 import { OfflineQueue } from './OfflineQueue'
@@ -15,12 +15,21 @@ import type {
   GetReleasesOptions,
   IdentifyUserPayload,
   IdentifyUserResponse,
+  MiteAnnouncementsApi,
   MiteConfig,
   MiteErrorEvent,
+  MiteErrorsApi,
+  MiteFeaturesApi,
+  MiteFeedbackApi,
   MiteIdentityStorage,
   MiteQuotaRefusal,
+  MiteReleasesApi,
+  MiteStoreReviewApi,
+  MiteUserApi,
   Release,
   ReleasesResponse,
+  ReportWirePayload,
+  SendFeedbackInput,
   SubmitBugReportPayload,
   SubmitBugResult,
   VoteFeatureRequestPayload,
@@ -98,7 +107,39 @@ function subscribeToBackground(onBackground: () => void): { remove(): void } | n
   }
 }
 
+/** Maps the camelCase SDK input to the snake_case body the API takes. */
+function toFeedbackWire(input: SendFeedbackInput): ReportWirePayload {
+  const attachments = [
+    ...(input.screenshot ? [{ uri: input.screenshot }] : []),
+    ...(input.attachments ?? []),
+  ]
+  return {
+    kind: input.type ?? 'other',
+    title: input.title,
+    description: input.message,
+    steps_to_reproduce: input.steps,
+    expected_behavior: input.expected,
+    actual_behavior: input.actual,
+    reporter_name: input.reporter?.name,
+    reporter_email: input.reporter?.email,
+    environment: input.context,
+    attachments: attachments.length > 0 ? attachments : undefined,
+  }
+}
+
 export class Mite {
+  /** Anything a user sends, from a bug to a question. */
+  readonly feedback: MiteFeedbackApi
+  /** The public feature request board. */
+  readonly features: MiteFeaturesApi
+  /** Errors your code caught. Uncaught errors and rejections are sent for you. */
+  readonly errors: MiteErrorsApi
+  /** Who is using the app. */
+  readonly user: MiteUserApi
+  readonly releases: MiteReleasesApi
+  readonly announcements: MiteAnnouncementsApi
+  readonly storeReview: MiteStoreReviewApi
+
   private deviceInfo: FlatStringRecord
   private buildInfo: BuildInfo
   private apiClient: ApiClient
@@ -165,7 +206,70 @@ export class Mite {
       captureUncaughtErrors: config.captureUncaughtErrors !== false,
       errorSink: (error, options) => this.errorTracker?.capture(error, options),
     })
+    // Also started here, not only in init(), so an app that never calls
+    // init() still reports rejections the way it reports uncaught errors.
+    this.trackRejections()
     this.identityReady = this.hydrateIdentityState()
+
+    // Plain objects of bound functions over the same internals as the 1.0.0
+    // methods, so each area autocompletes on its own.
+    this.feedback = {
+      send: input => this.submitReport(toFeedbackWire(input), '/api/v1/feedback'),
+    }
+    this.features = {
+      list: () => this.getFeatureRequests(),
+      request: ({ title, description, author }) =>
+        this.createFeatureRequest({
+          title,
+          description,
+          author_email: author.email,
+          author_name: author.name,
+        }),
+      vote: id => this.voteFeatureRequest({ feature_request_id: id }),
+      myVotes: () => this.getFeatureRequestVotes(),
+    }
+    this.errors = {
+      capture: (error, options) => triageContext.recordError(error, options),
+      flush: () => this.flushErrors(),
+    }
+    const mite = this
+    this.user = {
+      identify: (id, options = {}) =>
+        this.identify({
+          user_identifier: id,
+          email: options.email,
+          name: options.name,
+          isPaying: options.isPaying,
+          metadata: options.traits,
+        }),
+      reset: () => this.logout(),
+      optOut: () => this.setIdentificationOptOut(true),
+      optIn: () => this.setIdentificationOptOut(false),
+      get id() {
+        return mite.currentUserIdentifier
+      },
+      get anonymousId() {
+        return mite.currentAnonymousId
+      },
+      get isOptedOut() {
+        return mite.identificationOptOut
+      },
+    }
+    this.releases = {
+      list: options => this.getReleases(options),
+      lastSeen: () => this.getLastSeenReleaseVersion(),
+      markSeen: version => this.setLastSeenReleaseVersion(version),
+    }
+    this.announcements = {
+      list: options => this.getAnnouncements(options),
+      markSeen: id => this.markAnnouncementSeen(id),
+      seenIds: () => this.getSeenAnnouncementIds(),
+      clearSeen: () => this.clearSeenAnnouncements(),
+    }
+    this.storeReview = {
+      isAvailable: () => isStoreReviewAvailable(),
+      request: () => requestStoreReview(),
+    }
   }
 
   /**
@@ -194,11 +298,7 @@ export class Mite {
     if (this.errorTracker) {
       const tracker = this.errorTracker
       void this.ensureIdentityReady().then(() => tracker.restore())
-      if (this.config.captureUnhandledRejections !== false) {
-        trackUnhandledRejections(rejection =>
-          this.errorTracker?.capture(rejection, { handled: false }),
-        )
-      }
+      this.trackRejections()
       this.appStateSubscription = subscribeToBackground(() => {
         void this.errorTracker?.flush()
       })
@@ -215,6 +315,15 @@ export class Mite {
       // Ignore startup identity failures. Later identify calls and bug reports
       // will continue to use the latest local identity state.
     })
+  }
+
+  /** Swaps the listener when already installed, so calling it again is safe. */
+  private trackRejections(): void {
+    if (this.errorTracker && this.config.captureUnhandledRejections !== false) {
+      trackUnhandledRejections(rejection =>
+        this.errorTracker?.capture(rejection, { handled: false }),
+      )
+    }
   }
 
   /**
@@ -239,17 +348,27 @@ export class Mite {
    * Record an error the app caught. It is sent to Mite, grouped with every
    * other occurrence of the same error, and triaged; the latest one is also
    * attached to bug reports. Useful inside a catch block.
+   *
+   * @deprecated Use `mite.errors.capture(error)`. Removed in 2.0.
    */
   recordError(error: unknown, options?: CaptureOptions): void {
     triageContext.recordError(error, options)
   }
 
-  /** Alias of `recordError`. */
+  /**
+   * Alias of `recordError`.
+   *
+   * @deprecated Use `mite.errors.capture(error)`. Removed in 2.0.
+   */
   captureError(error: unknown, options?: CaptureOptions): void {
     triageContext.recordError(error, options)
   }
 
-  /** Send captured errors now rather than on the next batch. */
+  /**
+   * Send captured errors now rather than on the next batch.
+   *
+   * @deprecated Use `mite.errors.flush()`. Removed in 2.0.
+   */
   async flushErrors(): Promise<void> {
     await this.errorTracker?.flush()
   }
@@ -265,9 +384,18 @@ export class Mite {
    * If the request fails with a network error and the offline queue is
    * enabled, the report is queued for a later retry. A quota refusal is never
    * queued and never retried.
+   *
+   * @deprecated Use `mite.feedback.send({ type: 'bug', ... })`. Removed in 2.0.
    */
   async submitBug(
     payload: Omit<SubmitBugReportPayload, 'appId' | 'deviceInfo'>,
+  ): Promise<SubmitBugResult> {
+    return await this.submitReport(payload, '/api/v1/bug-reports')
+  }
+
+  private async submitReport(
+    payload: ReportWirePayload,
+    path: ReportPath,
   ): Promise<SubmitBugResult> {
     this.requireApiKey('submit bug reports')
 
@@ -285,6 +413,7 @@ export class Mite {
     try {
       const result = await this.bugReporter.sendBugReportToServer(payloadWithIdentity, {
         includeDefaultDeviceInfo: !this.identificationOptOut,
+        path,
       })
 
       if (!result.ok) {
@@ -311,7 +440,7 @@ export class Mite {
           )
         }
 
-        this.offlineQueue.enqueue('post', '/api/v1/bug-reports', {
+        this.offlineQueue.enqueue('post', path, {
           ...queuedPayload,
         })
         if (attachments && attachments.length > 0) {
@@ -328,6 +457,8 @@ export class Mite {
   /**
    * Identify an end user in your application.
    * Uses the current anonymous identifier automatically when needed.
+   *
+   * @deprecated Use `mite.user.identify(id, options)`. Removed in 2.0.
    */
   async identify(payload: IdentifyUserPayload): Promise<IdentifyUserResponse> {
     this.requireApiKey('identify users')
@@ -351,6 +482,8 @@ export class Mite {
 
   /**
    * Remove the identified user while keeping the anonymous id stable.
+   *
+   * @deprecated Use `mite.user.reset()`. Removed in 2.0.
    */
   async logout(): Promise<void> {
     await this.ensureIdentityReady()
@@ -371,6 +504,8 @@ export class Mite {
 
   /**
    * Toggle whether identified data should be sent to Mite.
+   *
+   * @deprecated Use `mite.user.optOut() or mite.user.optIn()`. Removed in 2.0.
    */
   async setIdentificationOptOut(optedOut: boolean): Promise<void> {
     await this.ensureIdentityReady()
@@ -397,6 +532,8 @@ export class Mite {
 
   /**
    * Fetch published releases for the application
+   *
+   * @deprecated Use `mite.releases.list()`. Removed in 2.0.
    */
   async getReleases(options: GetReleasesOptions = {}): Promise<Release[]> {
     const apiKey = this.requireApiKey('fetch releases')
@@ -424,6 +561,8 @@ export class Mite {
   /**
    * Fetch currently active announcements for the application, newest first.
    * Only published announcements inside their schedule window are returned.
+   *
+   * @deprecated Use `mite.announcements.list()`. Removed in 2.0.
    */
   async getAnnouncements(options: GetAnnouncementsOptions = {}): Promise<Announcement[]> {
     const apiKey = this.requireApiKey('fetch announcements')
@@ -451,6 +590,8 @@ export class Mite {
   /**
    * Get the ids of announcements this device has already seen.
    * Returns an empty list when nothing has been seen or storage fails.
+   *
+   * @deprecated Use `mite.announcements.seenIds()`. Removed in 2.0.
    */
   async getSeenAnnouncementIds(): Promise<string[]> {
     try {
@@ -470,6 +611,8 @@ export class Mite {
 
   /**
    * Persist an announcement id as seen so it is not shown again on this device.
+   *
+   * @deprecated Use `mite.announcements.markSeen(id)`. Removed in 2.0.
    */
   async markAnnouncementSeen(id: string): Promise<void> {
     try {
@@ -489,6 +632,8 @@ export class Mite {
 
   /**
    * Forget every seen announcement, so active announcements show again.
+   *
+   * @deprecated Use `mite.announcements.clearSeen()`. Removed in 2.0.
    */
   async clearSeenAnnouncements(): Promise<void> {
     try {
@@ -500,6 +645,8 @@ export class Mite {
 
   /**
    * Fetch feature requests for the current application.
+   *
+   * @deprecated Use `mite.features.list()`. Removed in 2.0.
    */
   async getFeatureRequests(): Promise<FeatureRequest[]> {
     this.requireApiKey('fetch feature requests')
@@ -514,6 +661,8 @@ export class Mite {
   /**
    * Create a feature request for the current application.
    * The request is tied to the SDK's identified/anonymous end user.
+   *
+   * @deprecated Use `mite.features.request({ title, author: { email } })`. Removed in 2.0.
    */
   async createFeatureRequest(
     payload: CreateFeatureRequestPayload,
@@ -548,6 +697,8 @@ export class Mite {
   /**
    * Toggle a vote on a feature request for the current application.
    * The vote is tied to the SDK's identified/anonymous end user.
+   *
+   * @deprecated Use `mite.features.vote(id)`. Removed in 2.0.
    */
   async voteFeatureRequest(
     payload: VoteFeatureRequestPayload,
@@ -579,6 +730,8 @@ export class Mite {
   /**
    * Fetch the feature requests already voted on by the SDK's
    * identified/anonymous end user, or by an email address when provided.
+   *
+   * @deprecated Use `mite.features.myVotes()`. Removed in 2.0.
    */
   async getFeatureRequestVotes(voterEmail?: string): Promise<string[]> {
     this.requireApiKey('fetch feature request votes')
@@ -605,6 +758,8 @@ export class Mite {
   /**
    * Check whether the native store review dialog can be requested.
    * Requires the optional expo-store-review peer dependency.
+   *
+   * @deprecated Use `mite.storeReview.isAvailable()`. Removed in 2.0.
    */
   async isStoreReviewAvailable(): Promise<boolean> {
     return await isStoreReviewAvailable()
@@ -614,6 +769,8 @@ export class Mite {
    * Request the native store review dialog (App Store / Play Store).
    * Resolves to true when the request was made. Safely no-ops and resolves
    * to false when the optional expo-store-review peer dependency is missing.
+   *
+   * @deprecated Use `mite.storeReview.request()`. Removed in 2.0.
    */
   async requestStoreReview(): Promise<boolean> {
     return await requestStoreReview()
@@ -622,6 +779,8 @@ export class Mite {
   /**
    * Get the app version last acknowledged by the "What's New" widget.
    * Returns null when no version has been seen yet.
+   *
+   * @deprecated Use `mite.releases.lastSeen()`. Removed in 2.0.
    */
   async getLastSeenReleaseVersion(): Promise<string | null> {
     try {
@@ -633,6 +792,8 @@ export class Mite {
 
   /**
    * Persist the app version acknowledged by the "What's New" widget.
+   *
+   * @deprecated Use `mite.releases.markSeen(version)`. Removed in 2.0.
    */
   async setLastSeenReleaseVersion(version: string): Promise<void> {
     try {
@@ -658,12 +819,15 @@ export class Mite {
     return this.offlineQueue?.pendingCount ?? 0
   }
 
+  /** @deprecated Use `mite.user.anonymousId`. Removed in 2.0. */
   get anonymousId(): string {
     return this.currentAnonymousId
   }
 
   /**
    * The currently identified end user, when one exists.
+   *
+   * @deprecated Use `mite.user.id`. Removed in 2.0.
    */
   get userIdentifier(): string | undefined {
     return this.currentUserIdentifier
@@ -677,6 +841,7 @@ export class Mite {
     await this.identityReady
   }
 
+  /** @deprecated Use `mite.user.isOptedOut`. Removed in 2.0. */
   get isIdentificationOptedOut(): boolean {
     return this.identificationOptOut
   }
@@ -894,9 +1059,7 @@ export class Mite {
     }
   }
 
-  private buildBugReportPayload(
-    payload: Omit<SubmitBugReportPayload, 'appId' | 'deviceInfo'>,
-  ): Omit<SubmitBugReportPayload, 'appId' | 'deviceInfo'> {
+  private buildBugReportPayload(payload: ReportWirePayload): ReportWirePayload {
     const {
       anonymous_id: providedAnonymousId,
       user_identifier: providedUserIdentifier,

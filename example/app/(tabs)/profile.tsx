@@ -29,14 +29,14 @@ export default function ProfileScreen() {
   const [userId, setUserId] = useState('')
   const [submitting, setSubmitting] = useState(false)
 
-  const [anonymousId, setAnonymousId] = useState(mite.anonymousId)
-  const [userIdentifier, setUserIdentifier] = useState(mite.userIdentifier)
-  const [optedOut, setOptedOut] = useState(mite.isIdentificationOptedOut)
+  const [anonymousId, setAnonymousId] = useState(mite.user.anonymousId)
+  const [userIdentifier, setUserIdentifier] = useState(mite.user.id)
+  const [optedOut, setOptedOut] = useState(mite.user.isOptedOut)
 
   const refreshIdentity = useCallback(() => {
-    setAnonymousId(mite.anonymousId)
-    setUserIdentifier(mite.userIdentifier)
-    setOptedOut(mite.isIdentificationOptedOut)
+    setAnonymousId(mite.user.anonymousId)
+    setUserIdentifier(mite.user.id)
+    setOptedOut(mite.user.isOptedOut)
   }, [mite])
 
   useFocusEffect(
@@ -55,12 +55,11 @@ export default function ProfileScreen() {
     setSubmitting(true)
     try {
       const identifier =
-        userId.trim() || email.trim() || `demo-user-${mite.anonymousId.slice(0, 8)}`
-      await mite.identify({
-        user_identifier: identifier,
+        userId.trim() || email.trim() || `demo-user-${mite.user.anonymousId.slice(0, 8)}`
+      await mite.user.identify(identifier, {
         email: email.trim() || undefined,
         name: name.trim() || undefined,
-        metadata: { source: 'example-app', fake_identity: true },
+        traits: { source: 'example-app', fake_identity: true },
       })
       refreshIdentity()
       setName('')
@@ -76,7 +75,7 @@ export default function ProfileScreen() {
 
   const handleLogout = async () => {
     try {
-      await mite.logout()
+      await mite.user.reset()
       refreshIdentity()
     } catch {
       Alert.alert('Error', 'Failed to log out. Please try again.')
@@ -86,7 +85,7 @@ export default function ProfileScreen() {
   const handleOptOutChange = async (value: boolean) => {
     setOptedOut(value)
     try {
-      await mite.setIdentificationOptOut(value)
+      await (value ? mite.user.optOut() : mite.user.optIn())
     } catch {
       Alert.alert('Error', 'Failed to update the identification preference.')
     } finally {

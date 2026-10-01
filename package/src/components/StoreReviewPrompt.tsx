@@ -99,7 +99,7 @@ export function StoreReviewPrompt({
 
   const handlePositive = useCallback(async () => {
     handleClose()
-    const reviewRequested = await mite.requestStoreReview()
+    const reviewRequested = await mite.storeReview.request()
     onPositive?.(reviewRequested)
   }, [handleClose, mite, onPositive])
 

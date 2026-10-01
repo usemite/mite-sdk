@@ -220,10 +220,17 @@ export const triageContext = new TriageContext()
 /**
  * Record an error the app caught: it is sent to Mite for tracking and the
  * latest one is attached to bug reports. Useful inside a catch block.
+ *
+ * @deprecated Use `captureError(error)`, or `mite.errors.capture(error)`. Removed in 2.0.
  */
 export function recordError(error: unknown, options?: CaptureOptions): void {
   triageContext.recordError(error, options)
 }
 
-/** Alias of `recordError`, for code that reads better with Sentry's verb. */
-export const captureError = recordError
+/**
+ * Send an error your code caught to Mite, without a `Mite` instance at hand.
+ * Never throws. Uncaught errors and unhandled rejections are sent for you.
+ */
+export function captureError(error: unknown, options?: CaptureOptions): void {
+  triageContext.recordError(error, options)
+}

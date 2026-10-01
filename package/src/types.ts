@@ -1,3 +1,5 @@
+import type { CaptureOptions } from './ErrorTracker'
+
 export interface MiteIdentityStorage {
   getItem(key: string): string | null | Promise<string | null>
   setItem(key: string, value: string): void | Promise<void>
@@ -207,6 +209,8 @@ export interface FeatureRequestVotesResponse {
 }
 
 export interface SubmitBugReportPayload {
+  /** Sent by `mite.feedback.send()`. The server treats a report without one as a bug. */
+  kind?: FeedbackType
   title: string
   description: string
   user_identifier?: string
@@ -229,6 +233,9 @@ export interface SubmitBugReportPayload {
 }
 
 /** One JS error occurrence, as sent to `POST /api/v1/errors`. */
+/** What the SDK posts for a report. `/api/v1/feedback` fills in a missing title. */
+export type ReportWirePayload = Omit<SubmitBugReportPayload, 'title'> & { title?: string }
+
 export interface MiteErrorEvent {
   name: string
   message: string
@@ -313,4 +320,127 @@ export interface IdentifyUserPayload {
 export interface IdentifyUserResponse {
   id: string
   created: boolean
+}
+
+/** What a piece of feedback is. */
+export type FeedbackType = 'bug' | 'question' | 'idea' | 'other'
+
+/** A file to attach, by local URI. */
+export interface MiteAttachment {
+  uri: string
+  /** MIME type, such as `image/png`. Read from the file when omitted. */
+  type?: string
+  name?: string
+}
+
+interface FeedbackFields {
+  /** What the user wrote. Required. */
+  message: string
+  /** Shown in the dashboard. Defaults to the message's first line. */
+  title?: string
+  /** Who sent it, when the user typed it in. Defaults to the identified user. */
+  reporter?: { name?: string; email?: string }
+  /** Local URI of a screenshot. Shorthand for the first attachment. */
+  screenshot?: string
+  attachments?: MiteAttachment[]
+  /** Extra flat context, merged over the SDK's own environment keys. */
+  context?: Record<string, string>
+}
+
+/**
+ * Input for `mite.feedback.send()`. The bug-only fields exist only when
+ * `type` is `'bug'`, so TypeScript rejects `steps` on a question.
+ */
+export type SendFeedbackInput =
+  | (FeedbackFields & {
+      type: 'bug'
+      steps?: string
+      expected?: string
+      actual?: string
+    })
+  | (FeedbackFields & {
+      /** Defaults to `'other'`. */
+      type?: Exclude<FeedbackType, 'bug'>
+      steps?: never
+      expected?: never
+      actual?: never
+    })
+
+/** Same shape as a bug report result: `ok: false` is a plan limit, not a fault. */
+export type SendFeedbackResult = SubmitBugResult
+
+export interface RequestFeatureInput {
+  title: string
+  description?: string
+  /** The feature request board shows the author and emails them on updates. */
+  author: { email: string; name?: string }
+}
+
+export interface IdentifyOptions {
+  email?: string
+  name?: string
+  /** Whether the user pays for your app. Mite alerts you when a paying user's report shows churn risk. */
+  isPaying?: boolean
+  /** Any other traits to keep on the user's profile. */
+  traits?: Record<string, unknown>
+}
+
+/** `mite.feedback`: anything a user sends, from a bug to a question. */
+export interface MiteFeedbackApi {
+  send(input: SendFeedbackInput): Promise<SendFeedbackResult>
+}
+
+/** `mite.features`: the public feature request board. */
+export interface MiteFeaturesApi {
+  list(): Promise<FeatureRequest[]>
+  request(input: RequestFeatureInput): Promise<CreateFeatureRequestResponse>
+  /** Toggles the current user's vote. */
+  vote(id: string): Promise<VoteFeatureRequestResponse>
+  /** Ids of the requests the current user voted for. */
+  myVotes(): Promise<string[]>
+}
+
+/** `mite.errors`: errors your code caught. Uncaught ones are sent for you. */
+export interface MiteErrorsApi {
+  /** Never throws and never waits, so it is safe inside a catch block. */
+  capture(error: unknown, options?: CaptureOptions): void
+  /** Send captured errors now instead of with the next batch. */
+  flush(): Promise<void>
+}
+
+/** `mite.user`: who is using the app. */
+export interface MiteUserApi {
+  /** Tie this device's reports to your user id. Call it after sign-in. */
+  identify(id: string, options?: IdentifyOptions): Promise<IdentifyUserResponse>
+  /** Forget the identified user, keeping the anonymous id. Call it on sign-out. */
+  reset(): Promise<void>
+  /** Stop sending the user id, email and device details. */
+  optOut(): Promise<void>
+  optIn(): Promise<void>
+  readonly id: string | undefined
+  readonly anonymousId: string
+  readonly isOptedOut: boolean
+}
+
+/** `mite.releases`: your published release notes. */
+export interface MiteReleasesApi {
+  list(options?: GetReleasesOptions): Promise<Release[]>
+  /** The version the "What's New" sheet last showed, or null. */
+  lastSeen(): Promise<string | null>
+  markSeen(version: string): Promise<void>
+}
+
+/** `mite.announcements`: in-app announcements. */
+export interface MiteAnnouncementsApi {
+  list(options?: GetAnnouncementsOptions): Promise<Announcement[]>
+  markSeen(id: string): Promise<void>
+  seenIds(): Promise<string[]>
+  clearSeen(): Promise<void>
+}
+
+/** `mite.storeReview`: the native App Store / Play Store review prompt. */
+export interface MiteStoreReviewApi {
+  isAvailable(): Promise<boolean>
+  /** Resolves to false when expo-store-review is not installed. */
+  request(): Promise<boolean>
 }

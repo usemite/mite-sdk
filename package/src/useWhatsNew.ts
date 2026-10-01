@@ -79,8 +79,8 @@ export function useWhatsNew(options: UseWhatsNewOptions = {}): UseWhatsNewResult
   useEffect(() => {
     let cancelled = false
 
-    mite
-      .getLastSeenReleaseVersion()
+    mite.releases
+      .lastSeen()
       .then(version => {
         if (!cancelled) {
           setLastSeenVersion(version)
@@ -105,7 +105,7 @@ export function useWhatsNew(options: UseWhatsNewOptions = {}): UseWhatsNewResult
 
     if (lastSeenVersion === null && !showOnFirstLaunch) {
       setLastSeenVersion(currentVersion)
-      void mite.setLastSeenReleaseVersion(currentVersion)
+      void mite.releases.markSeen(currentVersion)
     }
   }, [lastSeenLoaded, lastSeenVersion, currentVersion, showOnFirstLaunch, mite])
 
@@ -159,7 +159,7 @@ export function useWhatsNew(options: UseWhatsNewOptions = {}): UseWhatsNewResult
 
     if (currentVersion) {
       setLastSeenVersion(currentVersion)
-      await mite.setLastSeenReleaseVersion(currentVersion)
+      await mite.releases.markSeen(currentVersion)
     }
   }, [currentVersion, mite])
 

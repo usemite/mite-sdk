@@ -2,7 +2,7 @@ import { ThemedText } from '@/components/ThemedText'
 import { ThemedView } from '@/components/ThemedView'
 import { InputWithLabel } from '@/components/ui/InputWithLabel'
 import { useThemeColor } from '@/hooks/useThemeColor'
-import { type SubmitBugReportPayload, useBugReport } from '@usemite/sdk'
+import { type MiteAttachment, useFeedback } from '@usemite/sdk'
 import * as ImagePicker from 'expo-image-picker'
 import { useState } from 'react'
 import {
@@ -18,13 +18,13 @@ import {
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
-type Attachment = NonNullable<SubmitBugReportPayload['attachments']>[number]
+type Attachment = MiteAttachment
 
 const MAX_ATTACHMENTS = 3
 
 export default function ReportScreen() {
   const insets = useSafeAreaInsets()
-  const { submitBug, submitting, lastResponse, reset } = useBugReport()
+  const { send, sending: submitting, lastResponse, reset } = useFeedback()
   const tintColor = useThemeColor({ light: '#0a7ea4', dark: '#4fc3f7' }, 'tint')
 
   const [title, setTitle] = useState('')
@@ -83,12 +83,13 @@ export default function ReportScreen() {
     }
 
     try {
-      const result = await submitBug({
+      const result = await send({
+        type: 'bug',
         title: title.trim(),
-        description: description.trim(),
-        steps_to_reproduce: stepsToReproduce.trim() || undefined,
-        expected_behavior: expectedBehavior.trim() || undefined,
-        actual_behavior: actualBehavior.trim() || undefined,
+        message: description.trim(),
+        steps: stepsToReproduce.trim() || undefined,
+        expected: expectedBehavior.trim() || undefined,
+        actual: actualBehavior.trim() || undefined,
         attachments: attachments.length > 0 ? attachments : undefined,
       })
 

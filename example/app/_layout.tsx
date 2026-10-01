@@ -39,7 +39,7 @@ export default function RootLayout() {
   }
 
   return (
-    <MiteProvider miteInstance={mite}>
+    <MiteProvider client={mite}>
       <Stack>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="+not-found" />
