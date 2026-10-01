@@ -232,10 +232,10 @@ export interface SubmitBugReportPayload {
   attachments?: Array<{ uri: string; type?: string; name?: string }>
 }
 
-/** One JS error occurrence, as sent to `POST /api/v1/errors`. */
 /** What the SDK posts for a report. `/api/v1/feedback` fills in a missing title. */
 export type ReportWirePayload = Omit<SubmitBugReportPayload, 'title'> & { title?: string }
 
+/** One JS error occurrence, as sent to `POST /api/v1/errors`. */
 export interface MiteErrorEvent {
   name: string
   message: string
