@@ -27,7 +27,7 @@ export function useAnnouncements(
     setError(null)
 
     try {
-      const data = await mite.getAnnouncements({ platform, limit })
+      const data = await mite.announcements.list({ platform, limit })
       setAnnouncements(data)
     } catch (err) {
       const error =

@@ -18,6 +18,7 @@ import { useAnnouncementPopup } from './useAnnouncementPopup'
 import { useAnnouncements } from './useAnnouncements'
 import { useBugReport } from './useBugReport'
 import { useFeatureRequests } from './useFeatureRequests'
+import { useFeedback } from './useFeedback'
 import { useMiteNavigationTracking } from './useMiteNavigationTracking'
 import { useReleases } from './useReleases'
 import { useWhatsNew } from './useWhatsNew'
@@ -43,6 +44,7 @@ export {
   useAnnouncements,
   useBugReport,
   useFeatureRequests,
+  useFeedback,
   useMite,
   useMiteNavigationTracking,
   useReleases,
@@ -59,7 +61,20 @@ export type {
   FeatureRequestStatus,
   FeatureRequestsResponse,
   FeatureRequestVotesResponse,
+  FeedbackType,
+  IdentifyOptions,
+  MiteAnnouncementsApi,
+  MiteAttachment,
   MiteConfig,
+  MiteErrorsApi,
+  MiteFeaturesApi,
+  MiteFeedbackApi,
+  MiteReleasesApi,
+  MiteStoreReviewApi,
+  MiteUserApi,
+  RequestFeatureInput,
+  SendFeedbackInput,
+  SendFeedbackResult,
   MiteErrorEvent,
   MiteIdentityStorage,
   MiteMMKVLikeStorage,
@@ -78,6 +93,8 @@ export type {
   VoteFeatureRequestResponse,
 } from './types'
 export type { UseBugReportResult, BugReportPayload } from './useBugReport'
+export type { UseFeedbackResult } from './useFeedback'
+export type { MiteProviderProps } from './MiteProvider'
 export type { FeatureRequestsSheetProps } from './components/FeatureRequestsSheet'
 export type {
   MiteErrorBoundaryFallbackProps,

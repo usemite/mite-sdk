@@ -56,7 +56,7 @@ export function useFeatureRequests(
 
     try {
       const [requests, votedIds] = await Promise.all([
-        mite.getFeatureRequests(),
+        mite.features.list(),
         mite.getFeatureRequestVotes(voterEmail),
       ])
 

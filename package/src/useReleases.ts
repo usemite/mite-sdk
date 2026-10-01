@@ -25,7 +25,7 @@ export function useReleases(options: UseReleasesOptions = {}): UseReleasesResult
     setError(null)
 
     try {
-      const data = await mite.getReleases({ platform, limit })
+      const data = await mite.releases.list({ platform, limit })
       setReleases(data)
     } catch (err) {
       const error = err instanceof Error ? err : new Error('Failed to fetch releases')

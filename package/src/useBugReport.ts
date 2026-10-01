@@ -23,21 +23,26 @@ export interface UseBugReportResult {
   reset: () => void
 }
 
-export function useBugReport(): UseBugReportResult {
-  const mite = useMite()
+/**
+ * Submission state for any report call: in flight, the last fault, the last
+ * report, and a plan-limit refusal kept apart from faults.
+ */
+export function useReportSubmission<TInput>(
+  submit: (input: TInput) => Promise<SubmitBugResult>,
+) {
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<Error | null>(null)
   const [lastResponse, setLastResponse] = useState<SubmitBugReportResponse | null>(null)
   const [refusal, setRefusal] = useState<MiteQuotaRefusal | null>(null)
 
-  const submitBug = useCallback(
-    async (payload: BugReportPayload) => {
+  const run = useCallback(
+    async (input: TInput) => {
       setSubmitting(true)
       setError(null)
       setRefusal(null)
 
       try {
-        const result = await mite.submitBug(payload)
+        const result = await submit(input)
 
         if (result.ok) {
           setLastResponse(result.report)
@@ -61,7 +66,7 @@ export function useBugReport(): UseBugReportResult {
         setSubmitting(false)
       }
     },
-    [mite],
+    [submit],
   )
 
   const reset = useCallback(() => {
@@ -70,12 +75,15 @@ export function useBugReport(): UseBugReportResult {
     setRefusal(null)
   }, [])
 
-  return {
-    submitBug,
-    submitting,
-    error,
-    lastResponse,
-    refusal,
-    reset,
-  }
+  return { run, submitting, error, lastResponse, refusal, reset }
+}
+
+export function useBugReport(): UseBugReportResult {
+  const mite = useMite()
+  const submit = useCallback(
+    (payload: BugReportPayload) => mite.submitBug(payload),
+    [mite],
+  )
+  const { run, ...state } = useReportSubmission(submit)
+  return { submitBug: run, ...state }
 }

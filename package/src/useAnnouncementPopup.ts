@@ -63,8 +63,8 @@ export function useAnnouncementPopup(
   useEffect(() => {
     let cancelled = false
 
-    mite
-      .getSeenAnnouncementIds()
+    mite.announcements
+      .seenIds()
       .then(ids => {
         if (!cancelled) {
           setSeenIds(ids)
@@ -109,7 +109,7 @@ export function useAnnouncementPopup(
 
     if (announcement) {
       setSeenIds(ids => (ids.includes(announcement.id) ? ids : [...ids, announcement.id]))
-      await mite.markAnnouncementSeen(announcement.id)
+      await mite.announcements.markSeen(announcement.id)
     }
   }, [announcement, mite])
 
